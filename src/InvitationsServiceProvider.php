@@ -9,6 +9,8 @@ use TwentySixB\LaravelInvitations\Console\Commands\PurgeExpiredInvitations;
 use TwentySixB\LaravelInvitations\Http\Livewire\InviteUsers;
 use TwentySixB\LaravelInvitations\Http\Livewire\AcceptInvitation;
 use TwentySixB\LaravelInvitations\Http\Livewire\InvitationList;
+use TwentySixB\LaravelInvitations\Models\Invitation;
+use TwentySixB\LaravelInvitations\Policies\InvitationPolicy;
 
 /**
  * Package Service Provider
@@ -16,6 +18,16 @@ use TwentySixB\LaravelInvitations\Http\Livewire\InvitationList;
  */
 class InvitationsServiceProvider extends PackageServiceProvider
 {
+
+	/**
+     * The policy mappings for the application.
+     *
+     * @var array
+     */
+    protected $policies = [
+		// Invitation::class => null,
+        // Invitation::class => InvitationPolicy::class,
+    ];
 
     /**
      * @inheritDoc
@@ -28,7 +40,9 @@ class InvitationsServiceProvider extends PackageServiceProvider
         $package->name('laravel-invitations')
             ->hasConfigFile()
 			->hasMigration('create_invitations_table')
-            ->hasRoute('web')
+			// FIXME: Invitations model is not recognized for routing.
+            // ->hasRoute('web')
+			// ->publishesServiceProvider(InvitationsServiceProvider::class)
 			->hasCommand(PurgeExpiredInvitations::class)
             ->hasViews('invitations');
     }
@@ -40,11 +54,9 @@ class InvitationsServiceProvider extends PackageServiceProvider
      */
     public function packageBooted() : void
     {
-		// TODO: Enable livewire components.
-		/*
         Livewire::component('invitations.list', InvitationList::class);
         Livewire::component('invitations.inviter', InviteUsers::class);
 		Livewire::component('invitations.accept', AcceptInvitation::class);
-		*/
+
     }
 }

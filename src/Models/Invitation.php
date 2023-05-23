@@ -40,10 +40,15 @@ class Invitation extends Model
      * @var array
      */
     protected $guarded = [
-        'created_at',
+		'created_at',
         'id',
         'modified_at',
     ];
+
+	public function isExpired() : bool
+	{
+		return $this->expires_at->lt(now());
+	}
 
     /**
      * Get the parent invitable model (event or group).
@@ -55,7 +60,7 @@ class Invitation extends Model
 
     public function author()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(config('invitations.models.user'));
     }
 
 	public function scopeExpired(Builder $query): Builder
