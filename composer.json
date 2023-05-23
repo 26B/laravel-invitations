@@ -3,7 +3,7 @@
     "description": "Laravel package to invite users",
     "type": "library",
     "require": {
-        "php": "^7.4 || ^8.0",
+        "php": "^8.0",
         "chillerlan/php-qrcode": "^4.3",
         "spatie/laravel-package-tools": "^1.11",
         "livewire/livewire": "^2.10"

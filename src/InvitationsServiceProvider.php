@@ -2,11 +2,13 @@
 
 namespace TwentySixB\LaravelInvitations;
 
+use Livewire\Livewire;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Spatie\LaravelPackageTools\Package;
-use TwentySixB\LaravelInvitations\Http\Livewire\Invitations;
+use TwentySixB\LaravelInvitations\Console\Commands\PurgeExpiredInvitations;
 use TwentySixB\LaravelInvitations\Http\Livewire\InviteUsers;
-use Livewire\Livewire;
+use TwentySixB\LaravelInvitations\Http\Livewire\AcceptInvitation;
+use TwentySixB\LaravelInvitations\Http\Livewire\InvitationList;
 
 /**
  * Package Service Provider
@@ -25,7 +27,9 @@ class InvitationsServiceProvider extends PackageServiceProvider
     {
         $package->name('laravel-invitations')
             ->hasConfigFile()
+			->hasMigration('create_invitations_table')
             ->hasRoute('web')
+			->hasCommand(PurgeExpiredInvitations::class)
             ->hasViews('invitations');
     }
 
@@ -36,9 +40,11 @@ class InvitationsServiceProvider extends PackageServiceProvider
      */
     public function packageBooted() : void
     {
-        Livewire::component('invitations.invites', Invitations::class);
+		// TODO: Enable livewire components.
+		/*
+        Livewire::component('invitations.list', InvitationList::class);
         Livewire::component('invitations.inviter', InviteUsers::class);
-
-        // TODO: Register all livewire components.
+		Livewire::component('invitations.accept', AcceptInvitation::class);
+		*/
     }
 }
