@@ -6,8 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use App\Models\User;
-
+use TwentySixB\LaravelInvitations\Exceptions\InvitationExpiredException;
 
 /**
  * Undocumented class
@@ -15,6 +14,7 @@ use App\Models\User;
  * @property string $code
  * @property string $author_id
  * @property array $data
+ * @property bool $used
  * @property Carbon $expires_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
@@ -30,8 +30,9 @@ class Invitation extends Model
      * @var array
      */
     protected $casts = [
-        'data'       => AsArrayObject::class,
+		'data' => AsArrayObject::class,
         'expires_at' => 'datetime',
+		'used' => 'bool',
     ];
 
     /**
@@ -44,6 +45,22 @@ class Invitation extends Model
         'id',
         'modified_at',
     ];
+
+	public function use() : self
+	{
+		if ($this->isExpired() === true) {
+			throw new InvitationExpiredException();
+		}
+
+		$this->used = true;
+		return $this;
+	}
+
+	public function expire() : self
+	{
+		$this->expires_at = now()->subHour(1);
+		return $this;
+	}
 
 	public function isExpired() : bool
 	{

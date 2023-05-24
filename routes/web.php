@@ -4,15 +4,15 @@ use TwentySixB\LaravelInvitations\Http\Controllers\InvitationController;
 use TwentySixB\LaravelInvitations\Http\Livewire\InvitationViewer;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 
-// Doesnt seem to be needed.
-Route::model('invitation', Invitation::class);
+// Might not need it, resolving as string.
+// Route::model('invitation', Invitation::class);
 
 // TODO: Refactor into customizable routes.
 
 // Invitations
 // Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
 
-	Route::get('/invitation/{invitation}', InvitationViewer::class)->name('invitation.show');
+	Route::get('/invitation/{invitation_id}', InvitationViewer::class)->name('invitation.show');
 
     // QR Codes
     Route::get('/event/{model_id}/attending/invite', [InvitationController::class, 'showCode'])

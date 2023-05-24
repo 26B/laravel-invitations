@@ -2,12 +2,12 @@
 
 namespace TwentySixB\LaravelInvitations\Http\Livewire;
 
-use TwentySixB\LaravelInvitations\Events\InvitationAccepted;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
 use Livewire\Component;
+use TwentySixB\LaravelInvitations\Actions\Accept;
+use TwentySixB\LaravelInvitations\Actions\Expired;
+use TwentySixB\LaravelInvitations\Actions\Reject;
 
 /**
  * Livewire Component to accept invitations.
@@ -19,22 +19,23 @@ class InvitationViewer extends Component
     /**
      * Undocumented variable
      */
-    public Invitation $invitation;
+    public Invitation|null $invitation;
 
-	public function mount()
+	protected string $fallback_route;
+
+	public function mount(string $invitation_id)
 	{
+		$this->fallback_route = config('invitations.fallback_route');
+		$this->invitation = Invitation::find($invitation_id);
+
+		if (!$this->invitation instanceof Invitation) {
+			return;
+		}
+
 		$this->authorize('view', $this->invitation);
 
 		if ($this->invitation->isExpired()) {
-
-			// TODO: Must allow customization for this.
-			return redirect('dashboard')
-                ->with('toaster', new \App\ToasterNotification(
-                    'temporary',
-                    __('Invitation expired'),
-                    __('Your invitation has expired :time', ['time' => $this->invitation->expires_at->diffForHumans()])
-
-                ));
+			return Expired::handle($this->invitation);
 		}
 	}
 
@@ -43,7 +44,9 @@ class InvitationViewer extends Component
      */
     public function render()
     {
-        return view('livewire.invitation-viewer');
+		return $this->invitation
+			? view('livewire.invitations.viewer')
+			: view('livewire.invitations.viewer-invitation-missing');
     }
 
     /**
@@ -54,15 +57,9 @@ class InvitationViewer extends Component
         $this->authorize('view', $this->invitation);
 
         try {
-            $invite_model = $this->invitation->invitable();
-            InvitationAccepted::dispatch($this->invitation);
-            $this->invitation->delete();
 
-            // Automaticaly detect a redirect to route.
-            $model_name = Str::lower(class_basename($invite_model->getRelated()));
+			Accept::handle($this->invitation);
 
-            return redirect()
-                ->route("{$model_name}.show", [$model_name => $invite_model->invitable()->first()]);
         } catch (\Throwable $th) {
             // TODO: Throw specific exception.
             throw $th;
@@ -75,8 +72,7 @@ class InvitationViewer extends Component
     public function reject()
     {
         $this->authorize('delete', $this->invitation);
-        $this->invitation->delete();
 
-        return redirect()->route('dashboard');
+		Reject::handle($this->invitation);
     }
 }
