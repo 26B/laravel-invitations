@@ -14,6 +14,8 @@ return [
 		\App\Models\Group::class,
 	],
 
+	'fallback_route' => 'dashboard',
+
 	'purge' => [
 
 		/**
@@ -30,7 +32,8 @@ return [
 		 * User model.
 		 *
 		 */
-		'user' => null,
+		// FIXME: Dont push this.
+		'user' => \App\Models\User::class,
 
 		/**
 		 * Model that handles the invitations.
