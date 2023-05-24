@@ -56,10 +56,13 @@ class Lister extends Component
 		}
 
 		$this->invitations = Invitation::whereHasMorph(
-			'invitable',
-			is_iterable($models) ? $models : '*',
-			$scope
-		)->get();
+				'invitable',
+				is_iterable($models) ? $models : '*',
+				$scope
+			)
+			->where('used', false)
+			->where('expires_at', '>', now())
+			->get();
 	}
 
     /**
