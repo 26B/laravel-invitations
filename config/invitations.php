@@ -1,5 +1,9 @@
 <?php
 
+use TwentySixB\LaravelInvitations\Actions\Accept;
+use TwentySixB\LaravelInvitations\Actions\Expired;
+use TwentySixB\LaravelInvitations\Actions\Reject;
+
 return [
 
     /**
@@ -12,6 +16,12 @@ return [
 		// TODO: Leave empty.
 		\App\Models\Event::class,
 		\App\Models\Group::class,
+	],
+
+	'actions' => [
+		'accept' => Accept::class,
+		'expired' => Expired::class,
+		'reject' => Reject::class,
 	],
 
 	'fallback_route' => 'dashboard',
