@@ -2,10 +2,13 @@
 
 namespace TwentySixB\LaravelInvitations\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use TwentySixB\LaravelInvitations\Database\Factories\InvitationFactory;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationExpiredException;
 
 /**
@@ -32,7 +35,7 @@ class Invitation extends Model
     protected $casts = [
 		'data' => AsArrayObject::class,
         'expires_at' => 'datetime',
-		'used' => 'bool',
+		'used' => 'boolean',
     ];
 
     /**
@@ -45,6 +48,11 @@ class Invitation extends Model
         'id',
         'modified_at',
     ];
+
+	protected static function newFactory(): Factory
+	{
+		return InvitationFactory::new();
+	}
 
 	public function use() : self
 	{
@@ -78,6 +86,13 @@ class Invitation extends Model
     public function author()
     {
         return $this->belongsTo(config('invitations.models.user'));
+    }
+
+	public function scopeActive(Builder $query): Builder
+    {
+        return $query
+			->where('used', false)
+            ->where('expires_at', '<=', now());
     }
 
 	public function scopeExpired(Builder $query): Builder
