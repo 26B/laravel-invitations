@@ -2,27 +2,33 @@
 
 namespace TwentySixB\LaravelInvitations\Http\Livewire;
 
-use TwentySixB\LaravelInvitations\Models\Invitation;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 use TwentySixB\LaravelInvitations\Actions\Accept;
 use TwentySixB\LaravelInvitations\Actions\Expired;
 use TwentySixB\LaravelInvitations\Actions\Reject;
+use TwentySixB\LaravelInvitations\Models\Invitation;
 
 /**
  * Livewire Component to accept invitations.
  */
-class InvitationViewer extends Component
+class Viewer extends Component
 {
     use AuthorizesRequests;
 
     /**
-     * Undocumented variable
+     * Contains the active invitation.
      */
     public Invitation|null $invitation;
 
+	/**
+	 * Route to redirect when no other is found.
+	 */
 	protected string $fallback_route;
 
+	/**
+     * {@inheritDoc}
+     */
 	public function mount(string $invitation_id)
 	{
 		$this->fallback_route = config('invitations.fallback_route');
@@ -58,7 +64,7 @@ class InvitationViewer extends Component
 
         try {
 
-			Accept::handle($this->invitation);
+			return Accept::handle($this->invitation);
 
         } catch (\Throwable $th) {
             // TODO: Throw specific exception.
@@ -67,12 +73,12 @@ class InvitationViewer extends Component
     }
 
     /**
-     * Delete invitation.
+     * Reject invitation.
      */
     public function reject()
     {
         $this->authorize('delete', $this->invitation);
 
-		Reject::handle($this->invitation);
+		return Reject::handle($this->invitation);
     }
 }

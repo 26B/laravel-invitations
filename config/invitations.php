@@ -18,18 +18,25 @@ return [
 		\App\Models\Group::class,
 	],
 
+	/**
+	 * Action classes that can customized.
+	 *
+	 */
 	'actions' => [
 		'accept' => Accept::class,
 		'expired' => Expired::class,
 		'reject' => Reject::class,
 	],
 
+	/**
+	 * Used as redirect when no other route is available.
+	 */
 	'fallback_route' => 'dashboard',
 
 	'purge' => [
 
 		/**
-		 * Determins how old invitations should be before purging them.
+		 * Determines how old invitations should be before purging them.
 		 *
 		 * Set to false if you don't want to remove expired invitations.
 		 */

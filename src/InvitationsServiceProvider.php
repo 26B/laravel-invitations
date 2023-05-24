@@ -7,8 +7,8 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Spatie\LaravelPackageTools\Package;
 use TwentySixB\LaravelInvitations\Console\Commands\PurgeExpiredInvitations;
 use TwentySixB\LaravelInvitations\Http\Livewire\InviteUsers;
-use TwentySixB\LaravelInvitations\Http\Livewire\AcceptInvitation;
-use TwentySixB\LaravelInvitations\Http\Livewire\InvitationList;
+use TwentySixB\LaravelInvitations\Http\Livewire\List;
+use TwentySixB\LaravelInvitations\Http\Livewire\Viewer;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 use TwentySixB\LaravelInvitations\Policies\InvitationPolicy;
 
@@ -54,9 +54,10 @@ class InvitationsServiceProvider extends PackageServiceProvider
      */
     public function packageBooted() : void
     {
-        Livewire::component('invitations.list', InvitationList::class);
-        Livewire::component('invitations.inviter', InviteUsers::class);
-		Livewire::component('invitations.accept', AcceptInvitation::class);
+		Livewire::component('invitations.viewer', Viewer::class);
+        Livewire::component('invitations.lister', Lister::class);
 
+		// TODO: Update component.
+		//Livewire::component('invitations.inviter', InviteUsers::class);
     }
 }
