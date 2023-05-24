@@ -68,7 +68,8 @@ class InvitationPolicy
      */
     public function delete($user, Invitation $invitation): bool
     {
-        return $this->view($user, $invitation);
+        return $this->view($user, $invitation)
+			|| $invitation->author_id === $user->getKey();
     }
 
     /**
