@@ -13,7 +13,6 @@ class Delete {
             abort(403);
         }
 
-		// $invitation->delete();
-
+		$invitation->delete();
 	}
 }
