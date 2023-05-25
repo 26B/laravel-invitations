@@ -2,6 +2,7 @@
 
 namespace TwentySixB\LaravelInvitations\Http\Livewire;
 
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 use TwentySixB\LaravelInvitations\Models\Invitation;
@@ -25,7 +26,8 @@ class Viewer extends Component
 
 	/**
      * {@inheritDoc}
-     */
+	 * @throws AuthorizationException
+	 */
 	public function mount(string $invitation_id)
 	{
 		$this->fallback_route = config('invitations.fallback_route');
