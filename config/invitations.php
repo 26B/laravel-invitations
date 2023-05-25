@@ -14,9 +14,6 @@ return [
      */
     'invitables' => [
 		//
-		// TODO: Leave empty.
-		\App\Models\Event::class,
-		\App\Models\Group::class,
 	],
 
 	/**
