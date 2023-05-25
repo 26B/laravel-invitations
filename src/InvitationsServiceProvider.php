@@ -41,10 +41,8 @@ class InvitationsServiceProvider extends PackageServiceProvider
         $package->name('laravel-invitations')
             ->hasConfigFile()
 			->hasMigration('create_invitations_table')
-			// FIXME: Invitations model is not recognized for routing.
+			// FIXME: Submit issue, middleware doesnt work this way.
             // ->hasRoute('web')
-			// ->publishesServiceProvider(InvitationsServiceProvider::class)
-			// ->hasViews()
 			->hasCommand(PurgeExpiredInvitations::class)
             ->hasViews('invitations');
     }
@@ -63,5 +61,6 @@ class InvitationsServiceProvider extends PackageServiceProvider
 
 		// TODO: Update component.
 		//Livewire::component('invitations.inviter', InviteUsers::class);
+
     }
 }

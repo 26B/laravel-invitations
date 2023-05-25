@@ -2,37 +2,40 @@
 
 namespace TwentySixB\LaravelInvitations\Http\Controllers;
 
-
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
-use TwentySixB\LaravelInvitations\Models\Invitation;
+use TwentySixB\LaravelInvitations\Events\InviteCodeUsed;
+use TwentySixB\LaravelInvitations\Exceptions\InvalidCodeException;
 
 class InvitationController extends Controller
 {
-    // use AuthorizesRequests;
 
-    /**
+	/**
      * After a user scans a QR code it is redirected to this endpoint.
+	 *
+	 * Here we attempt to do some guesswork so all you have to do is handle the InviteCodeUsed event.
      */
-    public function validateCode(Request $request, string $id, string $code): RedirectResponse
+    public function validateCode(Request $request, string $model, string $id, string $code): RedirectResponse
     {
-        $type = Arr::first(explode('/', $request->path()));
-        $model = Str::of($type)->studly();
+		if (auth()->check() === false) {
+			abort(403);
+		}
+
+        $class = Str::of($model)->studly();
         /** @var \App\Models\Model */
-        $row = "\App\Models\\$model"::whereId($id)->firstOrFail();
+        $row = "\App\Models\\$class"::whereId($id)->firstOrFail();
 
         // Validate code.
         if ($row->invite_code !== $code) {
-            throw new HttpException(422, __('Invitation code not valid'));
+            throw new InvalidCodeException(422, __('Invitation code not valid'));
         }
 
+		// The part you need to handle.
         InviteCodeUsed::dispatch($row);
 
-        return redirect()->route("{$type}.show", $row);
+        return redirect()->route("{$model}.show", $row);
     }
 }
