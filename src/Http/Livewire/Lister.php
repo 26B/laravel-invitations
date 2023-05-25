@@ -3,12 +3,10 @@
 namespace TwentySixB\LaravelInvitations\Http\Livewire;
 
 use TwentySixB\LaravelInvitations\Models\Invitation;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
-use TwentySixB\LaravelInvitations\Actions\Delete;
 
 /**
  * Displays collections of invitations.
@@ -75,7 +73,7 @@ class Lister extends Component
 
 	public function delete(Invitation $invitation): void
 	{
-		Delete::handle($invitation);
+		config('invitations.actions.delete')::handle($invitation);
 
 		$this->loadForModel(
 			$this->target,

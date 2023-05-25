@@ -48,7 +48,6 @@ return [
 		 * User model.
 		 *
 		 */
-		// FIXME: Dont push this.
 		'user' => \App\Models\User::class,
 
 		/**
@@ -57,6 +56,5 @@ return [
 		 */
 		'invitation' => \TwentySixB\LaravelInvitations\Models\Invitation::class,
 	],
-
 
 ];

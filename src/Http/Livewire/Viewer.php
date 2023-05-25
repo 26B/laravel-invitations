@@ -4,9 +4,6 @@ namespace TwentySixB\LaravelInvitations\Http\Livewire;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
-use TwentySixB\LaravelInvitations\Actions\Accept;
-use TwentySixB\LaravelInvitations\Actions\Expired;
-use TwentySixB\LaravelInvitations\Actions\Reject;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 
 /**
@@ -41,7 +38,7 @@ class Viewer extends Component
 		$this->authorize('view', $this->invitation);
 
 		if ($this->invitation->isExpired()) {
-			return Expired::handle($this->invitation);
+			return config('invitations.actions.expired')::handle($this->invitation);
 		}
 	}
 
@@ -64,7 +61,7 @@ class Viewer extends Component
 
         try {
 
-			return Accept::handle($this->invitation);
+			return config('invitations.actions.accept')::handle($this->invitation);
 
         } catch (\Throwable $th) {
             // TODO: Throw specific exception.
@@ -79,6 +76,6 @@ class Viewer extends Component
     {
         $this->authorize('delete', $this->invitation);
 
-		return Reject::handle($this->invitation);
+		return config('invitations.actions.reject')::handle($this->invitation);
     }
 }
