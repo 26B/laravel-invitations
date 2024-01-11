@@ -1,6 +1,6 @@
 <?php
 
-namespace TwentySixB\LaravelInvitations\Http\Livewire;
+namespace TwentySixB\LaravelInvitations\Livewire;
 
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;

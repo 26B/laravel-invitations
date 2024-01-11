@@ -5,8 +5,7 @@
     "require": {
         "php": "^8.0",
         "chillerlan/php-qrcode": "^4.3",
-        "spatie/laravel-package-tools": "^1.11",
-        "livewire/livewire": "^2.10"
+        "spatie/laravel-package-tools": "^1.11"
     },
     "license": "MIT",
     "autoload": {

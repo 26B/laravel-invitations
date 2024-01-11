@@ -7,12 +7,10 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Spatie\LaravelPackageTools\Package;
 use Illuminate\Support\Facades\Blade;
 use TwentySixB\LaravelInvitations\Console\Commands\PurgeExpiredInvitations;
-use TwentySixB\LaravelInvitations\Http\Livewire\InviteUsers;
-use TwentySixB\LaravelInvitations\Http\Livewire\Lister;
-use TwentySixB\LaravelInvitations\Http\Livewire\Viewer;
+use TwentySixB\LaravelInvitations\Livewire\Lister;
+use TwentySixB\LaravelInvitations\Livewire\Viewer;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 use TwentySixB\LaravelInvitations\Policies\InvitationPolicy;
-use TwentySixB\LaravelInvitations\View\Components\Code;
 
 /**
  * Package Service Provider

@@ -4,6 +4,7 @@ use TwentySixB\LaravelInvitations\Actions\Accept;
 use TwentySixB\LaravelInvitations\Actions\Delete;
 use TwentySixB\LaravelInvitations\Actions\Expired;
 use TwentySixB\LaravelInvitations\Actions\Reject;
+use TwentySixB\LaravelInvitations\Actions\Filter;
 
 return [
 
@@ -25,6 +26,7 @@ return [
 		'expired' => Expired::class,
 		'reject' => Reject::class,
 		'delete' => Delete::class,
+		'filter' => Filter::class,
 	],
 
 	/**

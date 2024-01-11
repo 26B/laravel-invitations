@@ -1,11 +1,9 @@
 <?php
 
-namespace TwentySixB\LaravelInvitations\Http\Livewire;
+namespace TwentySixB\LaravelInvitations\Livewire;
 
 use TwentySixB\LaravelInvitations\Models\Invitation;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 /**
@@ -41,26 +39,14 @@ class Lister extends Component
 	 * @param iterable|null $models
 	 * @param boolean $user
 	 * @return void
+	 *
+	 * @todo Refactor using actions.
 	 */
 	protected function loadForModel(iterable|null $models, bool $user) : void
 	{
-		$scope = null;
+		$models = collect($models);
 
-		if ($user === true) {
-			$scope = function (Builder $query, $type) {
-				$query->where('data->email', '=', Auth::user()->email);
-				$query->orWhere('data->user->id', '=', Auth::user()->id);
-			};
-		}
-
-		$this->invitations = Invitation::whereHasMorph(
-				'invitable',
-				is_iterable($models) ? $models : '*',
-				$scope
-			)
-			->where('used', false)
-			->where('expires_at', '>', now())
-			->get();
+		$this->invitations = config('invitations.actions.filter')::handle($models, $user);
 	}
 
     /**
