@@ -3,6 +3,7 @@
 namespace TwentySixB\LaravelInvitations\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
+use TwentySixB\LaravelInvitations\Models\Invitation;
 
 trait HasInvitations {
 
