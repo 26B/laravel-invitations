@@ -25,6 +25,7 @@ use TwentySixB\LaravelInvitations\Exceptions\InvitationExpiredException;
  * @property Carbon $accepted_at
  * @property Carbon $rejected_at
  * @property Carbon $expires_at
+ * @property Carbon $expired_dispatched_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -43,6 +44,7 @@ class Invitation extends Model
         'accepted_at' => 'datetime',
         'rejected_at' => 'datetime',
         'expires_at' => 'datetime',
+        'expired_dispatched_at' => 'datetime',
     ];
 
     /**

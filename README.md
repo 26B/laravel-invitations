@@ -62,6 +62,7 @@ The migrations create an `invitations` table with:
 - `data` JSON payload (email, user info, etc.)
 - `accepted_at` / `rejected_at` nullable timestamps
 - `expires_at` timestamp
+- `expired_dispatched_at` nullable timestamp, set when `InvitationExpired` is sent
 - `created_at` / `updated_at` timestamps
 
 For installs that already ran the previous version, an upgrade migration converts the old `used` boolean into `accepted_at` (backfilled from `updated_at` for already-accepted invitations) and adds `rejected_at`. New installs get the final schema directly.
@@ -155,7 +156,9 @@ php artisan invitations:dispatch-expired    # dispatch InvitationExpired for exp
 
 `invitations:purge` deletes expired (unresolved and past `expires_at`) invitations whose `expires_at` is older than `invitations.purge.expiration_in_days`. Set `expiration_in_days` to `false` to disable purging.
 
-Target other states with `--accepted`, `--rejected`, or `--all` (any state). Override the age cutoff per run with `--days=`, e.g. `invitations:purge --accepted --days=7`. Combinations like `--accepted` plus `--rejected` purge either state.
+Target other states with `--accepted`, `--rejected`, or `--all` (any state). Override the age cutoff per run with `--days=`, e.g. `invitations:purge --accepted --days=7`. Combinations like `--accepted` plus `--rejected` purge either state. Use `--force` to also purge expired invitations that the dispatch job has not reported yet (i.e. skip the reported check).
+
+`invitations:dispatch-expired` sends `InvitationExpired` for each expired invitation that was not reported yet (stamps `expired_dispatched_at` on every row it reports, so it is safe to run repeatedly), batching 50 oldest-first per run. The default purge keeps any expired invitation that the dispatch job has not yet reported, so the two commands can be scheduled in any order.
 
 Schedule the commands in `routes/console.php`:
 

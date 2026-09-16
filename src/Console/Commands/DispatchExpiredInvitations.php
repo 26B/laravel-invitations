@@ -20,21 +20,26 @@ class DispatchExpiredInvitations extends Command
      *
      * @var string
      */
-    protected $description = 'Dispatches an InvitationExpired event for every expired invitation';
+    protected $description = 'Dispatches an InvitationExpired event for every expired invitation that has not been reported yet';
 
     /**
      * Execute the console command.
-     *
-     * ponytail: at-least-once delivery, fires on every run, no watermark column.
-     * Add a dispatched_at column when duplicate events matter.
      */
     public function handle(): int
     {
-        Invitation::expired()
+        $count = 0;
+
+        foreach (Invitation::expired()
+            ->whereNull('expired_dispatched_at')
             ->orderBy('expires_at', 'asc')
             ->limit(50)
-            ->get()
-            ->each(fn (Invitation $invitation) => InvitationExpired::dispatch($invitation));
+            ->get() as $invitation) {
+            InvitationExpired::dispatch($invitation);
+            $invitation->forceFill(['expired_dispatched_at' => now()])->save();
+            $count++;
+        }
+
+        $this->info("Dispatched InvitationExpired for {$count} invitation(s).");
 
         return Command::SUCCESS;
     }

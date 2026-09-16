@@ -27,7 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dropped PHP 8.3 support (`pestphp/pest` v5 requires PHP 8.4).
 - `used` boolean column replaced by an `accepted_at` nullable timestamp.
 - `code` column now has a unique index.
-- `invitations:purge` now only removes unresolved expired invitations by default, with `--accepted`, `--rejected`, and `--all` flags for other states and a `--days=` argument to override the age cutoff.
+- `invitations:purge` now only removes unresolved expired invitations by default, with `--accepted`, `--rejected`, and `--all` flags for other states and a `--days=` argument to override the age cutoff. A `--force` flag skips the reported check.
+- `invitations:dispatch-expired` now stamps `expired_dispatched_at` on each invitation it reports, making the command idempotent across runs; purge leaves unreported expired invitations alone until they are reported.
 - `accept()` and `reject()` now take effect atomically via a conditional update, so concurrent calls to the same invitation can only resolve it once.
 - `reject()` now persists a `rejected_at` timestamp instead of deleting the invitation.
 - `scopeActive()` / `scopeExpired()` predicates fixed and now exclude resolved invitations.

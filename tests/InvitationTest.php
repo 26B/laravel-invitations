@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use TwentySixB\LaravelInvitations\Events\InvitationAccepted;
+use TwentySixB\LaravelInvitations\Events\InvitationExpired;
 use TwentySixB\LaravelInvitations\Events\InvitationRejected;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyAcceptedException;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyRejectedException;
@@ -119,18 +120,61 @@ test('reject is atomic against a stalled concurrent reject', function () {
     $stale->reject();
 })->throws(InvitationAlreadyRejectedException::class);
 
-test('purge removes only unresolved invitations past the cutoff by default', function () {
+test('purge removes only stamped expired invitations past the cutoff by default', function () {
     $expired = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
+    $unreported = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
     $pending = Invitation::factory()->forInvitable(invitable())->pending()->create();
     $accepted = Invitation::factory()->forInvitable(invitable())->accepted()->create(['expires_at' => now()->subDays(40)]);
     $rejected = Invitation::factory()->forInvitable(invitable())->rejected()->create(['expires_at' => now()->subDays(40)]);
 
+    $expired->forceFill(['expired_dispatched_at' => now()])->save();
+
     $this->artisan('invitations:purge')->assertSuccessful();
 
     expect(Invitation::find($expired->id))->toBeNull()
+        ->and(Invitation::find($unreported->id))->not->toBeNull()
         ->and(Invitation::find($pending->id))->not->toBeNull()
         ->and(Invitation::find($accepted->id))->not->toBeNull()
         ->and(Invitation::find($rejected->id))->not->toBeNull();
+});
+
+test('dispatch-expired stamps and reports each expired invitation once', function () {
+    Event::fake();
+
+    $expired = Invitation::factory()->forInvitable(invitable())->expired()->create();
+    $recent = Invitation::factory()->forInvitable(invitable())->pending()->create();
+
+    $this->artisan('invitations:dispatch-expired')->assertSuccessful();
+    $this->artisan('invitations:dispatch-expired')->assertSuccessful();
+
+    Event::assertDispatched(InvitationExpired::class, 1);
+
+    Event::assertDispatched(InvitationExpired::class, 1);
+    expect($expired->fresh()->expired_dispatched_at)->not->toBeNull()
+        ->and($recent->fresh()->expired_dispatched_at)->toBeNull();
+});
+
+test('purge with force removes unreported expired invitations', function () {
+    $expired = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
+    $recent = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(5)]);
+
+    $this->artisan('invitations:purge --force --days=30')->assertSuccessful();
+
+    expect(Invitation::find($expired->id))->toBeNull()
+        ->and(Invitation::find($recent->id))->not->toBeNull();
+});
+
+test('purge leaves unreported expired invitations for the dispatch job', function () {
+    $expired = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
+
+    $this->artisan('invitations:purge')->assertSuccessful();
+    $this->artisan('invitations:dispatch-expired')->assertSuccessful();
+
+    with(Invitation::find($expired->id), fn ($row) => $row->forceFill(['expired_dispatched_at' => now()])->save());
+
+    $this->artisan('invitations:purge')->assertSuccessful();
+
+    expect(Invitation::find($expired->id))->toBeNull();
 });
 
 test('purge can target accepted invitations', function () {
@@ -166,6 +210,8 @@ test('purge can target all states', function () {
 test('purge respects the days cutoff', function () {
     $older = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
     $recent = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(5)]);
+
+    $older->forceFill(['expired_dispatched_at' => now()])->save();
 
     $this->artisan('invitations:purge --days=30')->assertSuccessful();
 

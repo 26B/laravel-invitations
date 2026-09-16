@@ -23,6 +23,7 @@ return new class extends Migration
             $table->timestamp('accepted_at')->nullable();
             $table->timestamp('rejected_at')->nullable();
             $table->timestamp('expires_at');
+            $table->timestamp('expired_dispatched_at')->nullable();
             $table->timestamps();
 
             $table->foreign('author_id')

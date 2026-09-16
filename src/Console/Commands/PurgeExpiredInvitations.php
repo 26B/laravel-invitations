@@ -18,6 +18,7 @@ class PurgeExpiredInvitations extends Command
         {--all : Purge invitations in any state}
         {--accepted : Purge accepted invitations}
         {--rejected : Purge rejected invitations}
+        {--force : Ignore the reported check and purge regardless of state reporting}
         {--days= : Only purge invitations whose expiry is this many days past (defaults to purge.expiration_in_days)}';
 
     /**
@@ -54,6 +55,10 @@ class PurgeExpiredInvitations extends Command
 
             if (! $this->option('all') && ! $this->option('accepted') && ! $this->option('rejected')) {
                 $purge->whereNull('accepted_at')->whereNull('rejected_at');
+
+                if (! $this->option('force')) {
+                    $purge->whereNotNull('expired_dispatched_at');
+                }
             }
         });
 
