@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-		// TODO: Make the table name configurable.
-		// TODO: Add soft delete.
+        // TODO: Make the table name configurable.
+        // TODO: Add soft delete.
 
         Schema::create('invitations', function (Blueprint $table) {
             $table->uuid('id')->primary();

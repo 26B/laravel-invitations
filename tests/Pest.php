@@ -9,7 +9,7 @@ uses(TestCase::class, RefreshDatabase::class)->in('.');
 
 function invitable(): Invitable
 {
-    $invitable = new Invitable();
+    $invitable = new Invitable;
     $invitable->id = (string) Str::uuid();
     $invitable->save();
 

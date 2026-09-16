@@ -6,7 +6,7 @@ Laravel package to invite users via time-limited invitations for any invitable m
 
 ## Requirements
 
-- PHP `^8.3` (8.3, 8.4, 8.5)
+- PHP `^8.4` (8.4, 8.5, 8.6)
 - Laravel `^13.0`
 
 ## Installation

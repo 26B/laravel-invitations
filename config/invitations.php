@@ -1,30 +1,31 @@
 <?php
 
+use App\Models\User;
+use TwentySixB\LaravelInvitations\Models\Invitation;
+
 return [
 
-	'purge' => [
+    'purge' => [
 
-		/**
-		 * Determines how old invitations should be before purging them.
-		 *
-		 * Set to false if you don't want to remove expired invitations.
-		 */
-		'expiration_in_days' => 30,
-	],
+        /**
+         * Determines how old invitations should be before purging them.
+         *
+         * Set to false if you don't want to remove expired invitations.
+         */
+        'expiration_in_days' => 30,
+    ],
 
-	'models' => [
+    'models' => [
 
-		/**
-		 * User model.
-		 *
-		 */
-		'user' => \App\Models\User::class,
+        /**
+         * User model.
+         */
+        'user' => User::class,
 
-		/**
-		 * Model that handles the invitations.
-		 *
-		 */
-		'invitation' => \TwentySixB\LaravelInvitations\Models\Invitation::class,
-	],
+        /**
+         * Model that handles the invitations.
+         */
+        'invitation' => Invitation::class,
+    ],
 
 ];

@@ -118,7 +118,7 @@ test('the upgrade migration converts the used schema', function () {
         'updated_at' => $updatedAt,
     ]);
 
-    $migration = require __DIR__ . '/../database/migrations/alter_invitations_table_add_accepted_and_rejected_at.php';
+    $migration = require __DIR__.'/../database/migrations/alter_invitations_table_add_accepted_and_rejected_at.php';
     $migration->up();
 
     $invitation = Invitation::find($id);

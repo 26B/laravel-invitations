@@ -29,11 +29,11 @@ class PurgeExpiredInvitations extends Command
     {
         $expiration_in_days = config('invitations.purge.expiration_in_days', false);
 
-		if ($expiration_in_days === false) {
-			return Command::SUCCESS;
-		}
+        if ($expiration_in_days === false) {
+            return Command::SUCCESS;
+        }
 
-        Invitation::orderBy('expires_at', 'ASC')
+        Invitation::orderBy('expires_at', 'asc')
             ->where(
                 'expires_at',
                 '<',

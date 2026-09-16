@@ -7,9 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use TwentySixB\LaravelInvitations\Models\Concerns\HasInvitations;
 
+/**
+ * @property string $id
+ * @property string $email
+ */
 class User extends Authenticatable
 {
-    use HasInvitations, HasFactory;
+    use HasFactory, HasInvitations;
 
     public $incrementing = false;
 

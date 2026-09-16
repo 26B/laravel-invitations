@@ -31,7 +31,7 @@ class DispatchExpiredInvitations extends Command
     public function handle(): int
     {
         Invitation::expired()
-            ->orderBy('expires_at', 'ASC')
+            ->orderBy('expires_at', 'asc')
             ->limit(50)
             ->get()
             ->each(fn (Invitation $invitation) => InvitationExpired::dispatch($invitation));

@@ -2,8 +2,8 @@
 
 namespace TwentySixB\LaravelInvitations\Policies;
 
-use TwentySixB\LaravelInvitations\Models\Invitation;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use TwentySixB\LaravelInvitations\Models\Invitation;
 
 class InvitationPolicy
 {
@@ -11,8 +11,6 @@ class InvitationPolicy
 
     /**
      * Determine whether the user can view any models.
-     *
-     * @return \Illuminate\Auth\Access\Response|bool
      */
     public function viewAny($user): bool
     {
@@ -21,8 +19,6 @@ class InvitationPolicy
 
     /**
      * Determine whether the user can view the model.
-     *
-     * @return \Illuminate\Auth\Access\Response|bool
      */
     public function view($user, Invitation $invitation): bool
     {
@@ -43,8 +39,6 @@ class InvitationPolicy
 
     /**
      * Determine whether the user can create models.
-     *
-     * @return \Illuminate\Auth\Access\Response|bool
      */
     public function create($user): bool
     {
@@ -53,8 +47,6 @@ class InvitationPolicy
 
     /**
      * Determine whether the user can update the model.
-     *
-     * @return \Illuminate\Auth\Access\Response|bool
      */
     public function update($user, Invitation $invitation): bool
     {
@@ -63,19 +55,15 @@ class InvitationPolicy
 
     /**
      * Determine whether the user can delete the model.
-     *
-     * @return \Illuminate\Auth\Access\Response|bool
      */
     public function delete($user, Invitation $invitation): bool
     {
         return $this->view($user, $invitation)
-			|| $invitation->author_id === $user->getKey();
+            || $invitation->author_id === $user->getKey();
     }
 
     /**
      * Determine whether the user can restore the model.
-     *
-     * @return \Illuminate\Auth\Access\Response|bool
      */
     public function restore($user, Invitation $invitation): bool
     {
@@ -84,8 +72,6 @@ class InvitationPolicy
 
     /**
      * Determine whether the user can permanently delete the model.
-     *
-     * @return \Illuminate\Auth\Access\Response|bool
      */
     public function forceDelete($user, Invitation $invitation): bool
     {

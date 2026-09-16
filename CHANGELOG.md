@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Laravel 13 support.
-- Support for PHP 8.3, 8.4, and 8.5.
+- Support for PHP 8.4, 8.5, and 8.6.
 - `InvitationExpired` and `InvitationRejected` events.
 - `InvitationAlreadyAcceptedException` and `InvitationAlreadyRejectedException`.
 - `accept()` and `reject()` lifecycle methods on the `Invitation` model.
@@ -18,10 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `invitations:dispatch-expired` console command.
 - Upgrade migration converting the `used` boolean to `accepted_at` (backfilled from `updated_at`) and adding `rejected_at`.
 - Test suite powered by [Pest](https://pestphp.com) v5.
+- [Laravel Pint](https://laravel.com/docs/pint) and [Larastan](https://larastan.com) as dev tooling (level 5 analysis, configured in `phpstan.neon.dist`).
+- GitHub Actions workflow: Pint auto-commit job plus Pest and Larastan jobs across a PHP 8.4/8.5/8.6 matrix.
 
 ### Changed
 
 - Rewritten as a logic-only package: no controllers, views, or Livewire components; lifecycle is handled via model methods, events, and exceptions.
+- Dropped PHP 8.3 support (`pestphp/pest` v5 requires PHP 8.4).
 - `used` boolean column replaced by an `accepted_at` nullable timestamp.
 - `reject()` now persists a `rejected_at` timestamp instead of deleting the invitation.
 - `scopeActive()` / `scopeExpired()` predicates fixed and now exclude resolved invitations.

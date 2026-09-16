@@ -9,19 +9,19 @@ use TwentySixB\LaravelInvitations\Models\Invitation;
 
 class InvitationFactory extends Factory
 {
-	/**
-	 * The name of the factory's corresponding model.
-	 *
-	 * @var string
-	 */
-	protected $model = Invitation::class;
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var class-string<Invitation>
+     */
+    protected $model = Invitation::class;
 
     /**
      * Define the model's default state.
      */
     public function definition(): array
     {
-		$user = config('invitations.models.user');
+        $user = config('invitations.models.user');
 
         return [
             'author_id' => $user::factory(),
@@ -60,7 +60,7 @@ class InvitationFactory extends Factory
      */
     public function expired(): Factory
     {
-        return $this->state(fn () => ['expires_at' => now()->subHour(1)]);
+        return $this->state(fn () => ['expires_at' => now()->subHour()]);
     }
 
     /**

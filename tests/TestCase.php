@@ -2,14 +2,16 @@
 
 namespace TwentySixB\LaravelInvitations\Tests;
 
+use Illuminate\Support\Str;
 use Orchestra\Testbench\TestCase as Orchestra;
+use TwentySixB\LaravelInvitations\InvitationsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
     protected function getPackageProviders($app)
     {
         return [
-            \TwentySixB\LaravelInvitations\InvitationsServiceProvider::class,
+            InvitationsServiceProvider::class,
         ];
     }
 
@@ -20,21 +22,21 @@ abstract class TestCase extends Orchestra
             'driver' => 'sqlite',
             'database' => ':memory:',
         ]);
-        $app['config']->set('invitations.models.user', \TwentySixB\LaravelInvitations\Tests\User::class);
+        $app['config']->set('invitations.models.user', User::class);
     }
 
     protected function defineDatabaseMigrations()
     {
         $this->loadMigrationsFrom([
-            __DIR__ . '/migrations',
-            __DIR__ . '/../database/migrations',
+            __DIR__.'/migrations',
+            __DIR__.'/../database/migrations',
         ]);
     }
 
     protected function invitable(): Invitable
     {
-        $invitable = new Invitable();
-        $invitable->id = (string) \Illuminate\Support\Str::uuid();
+        $invitable = new Invitable;
+        $invitable->id = (string) Str::uuid();
         $invitable->save();
 
         return $invitable;

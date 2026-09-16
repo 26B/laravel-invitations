@@ -1,0 +1,71 @@
+name: CI
+
+on:
+    push:
+    pull_request:
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.5'
+                  coverage: none
+
+            - name: Install dependencies
+              run: composer install --no-interaction --no-progress
+
+            - name: Pint
+              run: vendor/bin/pint
+
+            - name: Commit Pint fixes
+              if: github.event_name == 'push'
+              uses: stefanzweifel/git-auto-commit-action@v5
+              with:
+                  commit_message: 'style: apply pint fixes'
+
+    tests:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                php: ['8.4', '8.5', '8.6']
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: none
+
+            - name: Install dependencies
+              run: composer install --no-interaction --no-progress
+
+            - name: Pest
+              run: vendor/bin/pest
+
+    larastan:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                php: ['8.4', '8.5', '8.6']
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: none
+
+            - name: Install dependencies
+              run: composer install --no-interaction --no-progress
+
+            - name: Larastan
+              run: vendor/bin/phpstan analyse --memory-limit=1G
