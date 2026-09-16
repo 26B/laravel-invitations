@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased
+
+## [0.0.1] - 2026-09-16
 
 ### Added
 
@@ -54,5 +56,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `invitations.models` configuration group (`user` and `invitation` keys) and the `author_id` foreign key to `users.id` (`author_id` is kept as a plain morph column). The `Invitation` model is no longer configurable.
 - `create_invitations_table` and `alter_invitations_table_add_accepted_and_rejected_at` migrations, replaced by the single `recreate_invitations_table`.
 - `composer.lock` from version control.
-
-[Unreleased]: https://github.com/26b/laravel-invitations/compare/HEAD...HEAD
