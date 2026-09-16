@@ -7,6 +7,7 @@ use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use TwentySixB\LaravelInvitations\Console\Commands\DispatchExpiredInvitations;
 use TwentySixB\LaravelInvitations\Console\Commands\PurgeExpiredInvitations;
+use TwentySixB\LaravelInvitations\Models\Invitation;
 use TwentySixB\LaravelInvitations\Policies\InvitationPolicy;
 
 /**
@@ -22,8 +23,7 @@ class InvitationsServiceProvider extends PackageServiceProvider
         $package->name('laravel-invitations')
             ->hasConfigFile()
             ->hasMigrations([
-                'create_invitations_table',
-                'alter_invitations_table_add_accepted_and_rejected_at',
+                'recreate_invitations_table',
             ])
             ->hasCommands([
                 DispatchExpiredInvitations::class,
@@ -36,6 +36,6 @@ class InvitationsServiceProvider extends PackageServiceProvider
      */
     public function packageBooted(): void
     {
-        Gate::policy(config('invitations.models.invitation'), InvitationPolicy::class);
+        Gate::policy(Invitation::class, InvitationPolicy::class);
     }
 }

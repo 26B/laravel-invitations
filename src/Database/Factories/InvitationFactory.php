@@ -21,10 +21,7 @@ class InvitationFactory extends Factory
      */
     public function definition(): array
     {
-        $user = config('invitations.models.user');
-
         return [
-            'author_id' => $user::factory(),
             'code' => $this->faker->uuid(),
             'expires_at' => Carbon::instance($this->faker->dateTimeBetween('now', '+1 year')),
             'accepted_at' => null,
@@ -52,6 +49,17 @@ class InvitationFactory extends Factory
         return $this->state(fn () => [
             'invitable_type' => $invitable->getMorphClass(),
             'invitable_id' => $invitable->getKey(),
+        ]);
+    }
+
+    /**
+     * Set the model that sends the invitation.
+     */
+    public function from(Model $author): Factory
+    {
+        return $this->state(fn () => [
+            'author_type' => $author->getMorphClass(),
+            'author_id' => $author->getKey(),
         ]);
     }
 

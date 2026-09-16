@@ -20,6 +20,9 @@ use TwentySixB\LaravelInvitations\Exceptions\InvitationExpiredException;
  * Undocumented class
  *
  * @property string $code
+ * @property string $invitable_type
+ * @property string $invitable_id
+ * @property string $author_type
  * @property string $author_id
  * @property array $data
  * @property Carbon $accepted_at
@@ -143,16 +146,19 @@ class Invitation extends Model
     }
 
     /**
-     * Get the parent invitable model (event or group).
+     * Get the invited model.
      */
     public function invitable()
     {
         return $this->morphTo();
     }
 
+    /**
+     * Get the model that sent the invitation.
+     */
     public function author()
     {
-        return $this->belongsTo(config('invitations.models.user'));
+        return $this->morphTo();
     }
 
     public function scopeActive(Builder $query): Builder

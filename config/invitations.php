@@ -1,8 +1,5 @@
 <?php
 
-use App\Models\User;
-use TwentySixB\LaravelInvitations\Models\Invitation;
-
 return [
 
     'purge' => [
@@ -15,19 +12,6 @@ return [
          * Override per-run with the `--days=` command argument.
          */
         'expiration_in_days' => 30,
-    ],
-
-    'models' => [
-
-        /**
-         * User model.
-         */
-        'user' => User::class,
-
-        /**
-         * Model that handles the invitations.
-         */
-        'invitation' => Invitation::class,
     ],
 
 ];

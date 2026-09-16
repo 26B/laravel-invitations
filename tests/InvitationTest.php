@@ -1,10 +1,7 @@
 <?php
 
 use Illuminate\Database\QueryException;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use TwentySixB\LaravelInvitations\Events\InvitationAccepted;
 use TwentySixB\LaravelInvitations\Events\InvitationExpired;
@@ -13,7 +10,6 @@ use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyAcceptedException;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyRejectedException;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationExpiredException;
 use TwentySixB\LaravelInvitations\Models\Invitation;
-use TwentySixB\LaravelInvitations\Tests\Invitable;
 use TwentySixB\LaravelInvitations\Tests\User;
 
 test('accept sets accepted_at and dispatches the event', function () {
@@ -89,16 +85,53 @@ test('active and expired scopes exclude resolved invitations', function () {
         ->and($expiredIds)->not->toContain($resolvedPastDue->id);
 });
 
-test('has invitations groups the OR clause so chained constraints apply to both branches', function () {
-    $user = User::factory()->create(['email' => 'a@b.c']);
-    $other = User::factory()->create(['email' => 'a@b.c']);
+test('has invitations returns only invitations addressed to the model', function () {
+    $user = User::factory()->create();
+    $other = User::factory()->create();
 
-    $forUser = Invitation::factory()->forInvitable(invitable())->create(['data' => ['user' => ['id' => $user->id]]]);
-    Invitation::factory()->forInvitable(invitable())->create(['data' => ['user' => ['id' => $other->id]]]);
+    $mine = Invitation::factory()->forInvitable($user)->create();
+    Invitation::factory()->forInvitable($other)->create();
 
-    $ids = $user->invitations()->where('code', $forUser->code)->pluck('id');
+    $ids = $user->invitations()->where('code', $mine->code)->pluck('id');
 
-    expect($ids->all())->toBe([$forUser->id]);
+    expect($ids->all())->toBe([$mine->id]);
+});
+
+test('invitations resolve their invitable and author', function () {
+    $author = User::factory()->create();
+    $recipient = User::factory()->create();
+
+    $invitation = Invitation::factory()->from($author)->forInvitable($recipient)->create();
+
+    expect($invitation->author->is($author))->toBeTrue()
+        ->and($invitation->invitable->is($recipient))->toBeTrue()
+        ->and($recipient->invitations->first()->is($invitation))->toBeTrue();
+});
+
+test('the recipient and author may view and delete the invitation', function () {
+    $author = User::factory()->create();
+    $recipient = User::factory()->create();
+    $stranger = User::factory()->create();
+
+    $invitation = Invitation::factory()->from($author)->forInvitable($recipient)->create();
+
+    expect($recipient->can('view', $invitation))->toBeTrue()
+        ->and($recipient->can('delete', $invitation))->toBeTrue()
+        ->and($author->can('view', $invitation))->toBeTrue()
+        ->and($author->can('delete', $invitation))->toBeTrue()
+        ->and($stranger->can('view', $invitation))->toBeFalse()
+        ->and($stranger->can('delete', $invitation))->toBeFalse();
+});
+
+test('an invitation without an author is only visible to the recipient', function () {
+    $recipient = User::factory()->create();
+    $stranger = User::factory()->create();
+
+    $invitation = Invitation::factory()->forInvitable($recipient)->create();
+
+    expect($invitation->author_type)->toBeNull()
+        ->and($recipient->can('view', $invitation))->toBeTrue()
+        ->and($stranger->can('view', $invitation))->toBeFalse();
 });
 
 test('accept is atomic against a concurrent accept', function () {
@@ -157,7 +190,6 @@ test('dispatch-expired stamps and reports each expired invitation once', functio
 
     Event::assertDispatched(InvitationExpired::class, 1);
 
-    Event::assertDispatched(InvitationExpired::class, 1);
     expect($expired->fresh()->expired_dispatched_at)->not->toBeNull()
         ->and($recent->fresh()->expired_dispatched_at)->toBeNull();
 });
@@ -234,40 +266,3 @@ test('code is unique', function () {
 
     Invitation::factory()->forInvitable(invitable())->create(['code' => $code]);
 })->throws(QueryException::class);
-
-test('the upgrade migration converts the used schema', function () {
-    Schema::dropIfExists('invitations');
-    Schema::create('invitations', function (Blueprint $table) {
-        $table->uuid('id')->primary();
-        $table->uuidMorphs('invitable');
-        $table->uuid('author_id');
-        $table->uuid('code');
-        $table->json('data')->nullable();
-        $table->boolean('used')->default(false);
-        $table->timestamp('expires_at');
-        $table->timestamps();
-    });
-
-    $id = Str::uuid();
-    $updatedAt = now()->subDay()->startOfSecond();
-    DB::table('invitations')->insert([
-        'id' => $id,
-        'invitable_type' => Invitable::class,
-        'invitable_id' => (string) Str::uuid(),
-        'author_id' => Str::uuid(),
-        'code' => Str::uuid(),
-        'used' => true,
-        'expires_at' => now()->addDay(),
-        'created_at' => now(),
-        'updated_at' => $updatedAt,
-    ]);
-
-    $migration = require __DIR__.'/../database/migrations/alter_invitations_table_add_accepted_and_rejected_at.php';
-    $migration->up();
-
-    $invitation = Invitation::find($id);
-
-    expect($invitation->accepted_at->eq($updatedAt))->toBeTrue()
-        ->and($invitation->rejected_at)->toBeNull()
-        ->and(Schema::hasColumn('invitations', 'used'))->toBeFalse();
-});

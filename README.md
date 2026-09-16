@@ -1,6 +1,6 @@
 # Laravel Invitations
 
-Laravel package to invite users via time-limited invitations for any invitable model.
+Laravel package for time-limited invitations between any two models (a sender author and an invited invitable).
 
 > ⚠️ This library is in active development so the API may change.
 
@@ -34,14 +34,6 @@ return [
         // Set to false to disable purging.
         'expiration_in_days' => 30,
     ],
-
-    'models' => [
-        // Your application's User model.
-        'user' => \App\Models\User::class,
-
-        // Invitation model used by the package.
-        'invitation' => \TwentySixB\LaravelInvitations\Models\Invitation::class,
-    ],
 ];
 ```
 
@@ -53,25 +45,37 @@ Publish the migrations:
 php artisan vendor:publish --tag=invitations-migrations
 ```
 
-The migrations create an `invitations` table with:
+The migration creates an `invitations` table with:
 
 - `id` UUID primary key
-- `invitable_type` / `invitable_id` polymorphic relation
-- `author_id` foreign key to `users.id`
+- `invitable_type` / `invitable_id` polymorphic relation to the invited model
+- `author_type` / `author_id` nullable polymorphic relation to the model that sent the invitation
 - `code` UUID invitation code (unique)
-- `data` JSON payload (email, user info, etc.)
+- `data` free-form JSON payload for your application (message, metadata, ...)
 - `accepted_at` / `rejected_at` nullable timestamps
 - `expires_at` timestamp
 - `expired_dispatched_at` nullable timestamp, set when `InvitationExpired` is sent
 - `created_at` / `updated_at` timestamps
-
-For installs that already ran the previous version, an upgrade migration converts the old `used` boolean into `accepted_at` (backfilled from `updated_at` for already-accepted invitations) and adds `rejected_at`. New installs get the final schema directly.
 
 Run the migration:
 
 ```bash
 php artisan migrate
 ```
+
+### ⚠️ Upgrade notice
+
+The previous `create_invitations_table` and `alter_invitations_table_add_accepted_and_rejected_at` migrations are replaced by a single `recreate_invitations_table` migration that **drops any existing `invitations` table and rebuilds it** from scratch.
+
+1. Publish the updated migration:
+   ```bash
+   php artisan vendor:publish --tag=invitations-migrations
+   ```
+2. Run `php artisan migrate`.
+
+Existing invitations are deleted. This is intentional: invitations created with the previous structure are time-limited and safe to discard. If your production data is invite-intensive, export or migrate the rows yourself before running the migration.
+
+If you previously published the old migrations, you can delete their files from `database/migrations`; they are already recorded, so leaving them in place is harmless.
 
 ## Models
 
@@ -87,12 +91,12 @@ The `TwentySixB\LaravelInvitations\Models\Invitation` model provides:
 - `scopeActive()` — unresolved and not expired.
 - `scopeExpired()` — unresolved and past due (feeds the commands below).
 - `scopeAccepted()` / `scopeRejected()` — resolved invitations.
-- `invitable()` — polymorphic relation to the invited model.
-- `author()` — belongs-to relation to the configured user model.
+- `invitable()` — polymorphic relation to the model the invitation is addressed to.
+- `author()` — polymorphic relation to the model that sent the invitation (nullable).
 
 ### `HasInvitations` trait
 
-Add the `TwentySixB\LaravelInvitations\Models\Concerns\HasInvitations` trait to your `User` model to query invitations addressed to the user:
+Add the `TwentySixB\LaravelInvitations\Models\Concerns\HasInvitations` trait to a model you address invitations to (usually your `User`) to query its invitations:
 
 ```php
 use TwentySixB\LaravelInvitations\Models\Concerns\HasInvitations;
@@ -130,9 +134,11 @@ try {
 
 The package registers an `InvitationPolicy` that controls who can view, delete, and create invitations:
 
-- `view` — allowed if the user's email or ID matches `data.email` / `data.user.id`.
-- `delete` — allowed if the user can view the invitation or if the user is the author.
+- `view` — allowed for the invited model (the `invitable`) and for the author.
+- `delete` — allowed for the invited model and for the author.
 - `create` — allowed for everyone by default.
+
+Both checks are structural morph comparisons (`invitable_type` / `invitable_id` and `author_type` / `author_id`); the package does not read `data`.
 
 ## Events
 
@@ -172,12 +178,15 @@ Schedule::command('invitations:purge')->weekly();
 
 ## Factory
 
-Use the factory with an invitable model:
+Use the factory with the invited model and, optionally, the sender:
 
 ```php
 use TwentySixB\LaravelInvitations\Models\Invitation;
 
-$invitation = Invitation::factory()->forInvitable($event)->create();
+$invitation = Invitation::factory()
+    ->forInvitable($invitee)
+    ->from($sender)
+    ->create();
 ```
 
 State modifiers: `pending()`, `expired()`, `accepted()`, `rejected()`.

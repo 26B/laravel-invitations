@@ -22,7 +22,6 @@ abstract class TestCase extends Orchestra
             'driver' => 'sqlite',
             'database' => ':memory:',
         ]);
-        $app['config']->set('invitations.models.user', User::class);
     }
 
     protected function defineDatabaseMigrations()

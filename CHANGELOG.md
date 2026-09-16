@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `accept()` and `reject()` lifecycle methods on the `Invitation` model.
 - `isAccepted()`, `isRejected()`, `isResolved()`, `scopeAccepted()`, `scopeRejected()`.
 - `invitations:dispatch-expired` console command.
-- Upgrade migration converting the `used` boolean to `accepted_at` (backfilled from `updated_at`) and adding `rejected_at`.
+- Single `recreate_invitations_table` migration that drops and rebuilds the `invitations` table with the new structure (previous invitations are discarded — see the upgrade notice in the README).
+- `author()` polymorphic relation on the `Invitation` model and a `from()` factory state for setting the sender.
 - Test suite powered by [Pest](https://pestphp.com) v5.
 - [Laravel Pint](https://laravel.com/docs/pint) and [Larastan](https://larastan.com) as dev tooling (level 5 analysis, configured in `phpstan.neon.dist`).
 - GitHub Actions workflow: Pint auto-commit job plus Pest and Larastan jobs across a PHP 8.4/8.5/8.6 matrix.
@@ -33,7 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `reject()` now persists a `rejected_at` timestamp instead of deleting the invitation.
 - `scopeActive()` / `scopeExpired()` predicates fixed and now exclude resolved invitations.
 - `isExpired()` now excludes resolved invitations, matching `scopeExpired()`.
-- `HasInvitations::invitations()` groups its OR clause so chained constraints apply to both branches.
+- `invitable` now refers to the invited (recipient) model; `author` is a nullable polymorphic sender. `data` is a free-form application payload the package no longer reads.
+- `HasInvitations::invitations()` is now a plain `morphMany` on `invitable` (no more `data` JSON matching).
+- `InvitationPolicy` authorization is now structural morph comparison: `view` and `delete` allow the invited model and the author.
 - `InvitationExpiredException` no longer renders an HTTP view.
 - `InvitationPolicy` is now registered via the gate; dead `$policies` property removed.
 - Factory no longer depends on the removed `invitables` config; invitable is attached via `forInvitable()`. `unused()` renamed `pending()`, plus `accepted()` and `rejected()` states; `expired()` now produces a past `expires_at`.
@@ -48,6 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `InviteCodeUsed`, `UserInvited`, and `InviteByEmail` events.
 - `InvalidCodeException` and `AccessDeniedException`.
 - `invitables`, `actions`, and `fallback_route` configuration keys.
+- `invitations.models` configuration group (`user` and `invitation` keys) and the `author_id` foreign key to `users.id` (`author_id` is kept as a plain morph column). The `Invitation` model is no longer configurable.
+- `create_invitations_table` and `alter_invitations_table_add_accepted_and_rejected_at` migrations, replaced by the single `recreate_invitations_table`.
 - `composer.lock` from version control.
 
 [Unreleased]: https://github.com/26b/laravel-invitations/compare/HEAD...HEAD

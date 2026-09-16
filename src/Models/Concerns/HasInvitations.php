@@ -2,17 +2,13 @@
 
 namespace TwentySixB\LaravelInvitations\Models\Concerns;
 
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 
 trait HasInvitations
 {
-    public function invitations(): Builder
+    public function invitations(): MorphMany
     {
-        return Invitation::where(function (Builder $query) {
-            return $query
-                ->where('data->user->id', $this->getKey())
-                ->orWhere('data->user->email', $this->email);
-        });
+        return $this->morphMany(Invitation::class, 'invitable');
     }
 }
