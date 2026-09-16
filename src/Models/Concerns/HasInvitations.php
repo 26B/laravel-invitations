@@ -9,6 +9,6 @@ trait HasInvitations
 {
     public function invitations(): MorphMany
     {
-        return $this->morphMany(Invitation::class, 'invitable');
+        return $this->morphMany(Invitation::class, 'recipient');
     }
 }

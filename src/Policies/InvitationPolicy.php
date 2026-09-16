@@ -23,8 +23,8 @@ class InvitationPolicy
      */
     public function view(Model $user, Invitation $invitation): bool
     {
-        return $this->isInvitable($user, $invitation)
-            || $this->isAuthor($user, $invitation);
+        return $this->isRecipient($user, $invitation)
+            || $this->isSender($user, $invitation);
     }
 
     /**
@@ -48,8 +48,8 @@ class InvitationPolicy
      */
     public function delete(Model $user, Invitation $invitation): bool
     {
-        return $this->isInvitable($user, $invitation)
-            || $this->isAuthor($user, $invitation);
+        return $this->isRecipient($user, $invitation)
+            || $this->isSender($user, $invitation);
     }
 
     /**
@@ -71,17 +71,17 @@ class InvitationPolicy
     /**
      * Whether the user is the model the invitation is addressed to.
      */
-    private function isInvitable(Model $user, Invitation $invitation): bool
+    private function isRecipient(Model $user, Invitation $invitation): bool
     {
-        return $this->matches($user, $invitation->invitable_type, $invitation->invitable_id);
+        return $this->matches($user, $invitation->recipient_type, $invitation->recipient_id);
     }
 
     /**
      * Whether the user sent the invitation.
      */
-    private function isAuthor(Model $user, Invitation $invitation): bool
+    private function isSender(Model $user, Invitation $invitation): bool
     {
-        return $this->matches($user, $invitation->author_type, $invitation->author_id);
+        return $this->matches($user, $invitation->sender_type, $invitation->sender_id);
     }
 
     private function matches(Model $user, ?string $type, mixed $id): bool

@@ -2,7 +2,6 @@
 
 namespace TwentySixB\LaravelInvitations\Tests;
 
-use Illuminate\Support\Str;
 use Orchestra\Testbench\TestCase as Orchestra;
 use TwentySixB\LaravelInvitations\InvitationsServiceProvider;
 
@@ -30,14 +29,5 @@ abstract class TestCase extends Orchestra
             __DIR__.'/migrations',
             __DIR__.'/../database/migrations',
         ]);
-    }
-
-    protected function invitable(): Invitable
-    {
-        $invitable = new Invitable;
-        $invitable->id = (string) Str::uuid();
-        $invitable->save();
-
-        return $invitable;
     }
 }

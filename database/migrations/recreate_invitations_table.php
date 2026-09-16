@@ -16,15 +16,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // TODO: Make the table name configurable.
-        // TODO: Add soft delete.
-
         Schema::dropIfExists('invitations');
 
         Schema::create('invitations', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuidMorphs('invitable');
-            $table->nullableUuidMorphs('author');
+            $table->uuidMorphs('recipient');
+            $table->nullableUuidMorphs('sender');
             $table->uuid('code')->unique();
             $table->json('data')->nullable();
             $table->timestamp('accepted_at')->nullable();

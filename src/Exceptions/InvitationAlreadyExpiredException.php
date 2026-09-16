@@ -5,10 +5,10 @@ namespace TwentySixB\LaravelInvitations\Exceptions;
 use DateTimeInterface;
 use Exception;
 
-class InvitationExpiredException extends Exception
+class InvitationAlreadyExpiredException extends Exception
 {
     public function __construct(public readonly DateTimeInterface $expiredAt)
     {
-        parent::__construct('This invitation has expired on '.$expiredAt->format('Y-m-d H:i:s').'.');
+        parent::__construct('This invitation has already expired on '.$expiredAt->format('Y-m-d H:i:s').'.');
     }
 }

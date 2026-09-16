@@ -42,24 +42,24 @@ class InvitationFactory extends Factory
     }
 
     /**
-     * Attach the invitation to an invitable model.
+     * Address the invitation to a recipient model.
      */
-    public function forInvitable(Model $invitable): Factory
+    public function forRecipient(Model $recipient): Factory
     {
         return $this->state(fn () => [
-            'invitable_type' => $invitable->getMorphClass(),
-            'invitable_id' => $invitable->getKey(),
+            'recipient_type' => $recipient->getMorphClass(),
+            'recipient_id' => $recipient->getKey(),
         ]);
     }
 
     /**
      * Set the model that sends the invitation.
      */
-    public function from(Model $author): Factory
+    public function fromSender(Model $sender): Factory
     {
         return $this->state(fn () => [
-            'author_type' => $author->getMorphClass(),
-            'author_id' => $author->getKey(),
+            'sender_type' => $sender->getMorphClass(),
+            'sender_id' => $sender->getKey(),
         ]);
     }
 

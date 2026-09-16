@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 
-class PurgeExpiredInvitations extends Command
+class PurgeInvitations extends Command
 {
     /**
      * The name and signature of the console command.
@@ -18,8 +18,8 @@ class PurgeExpiredInvitations extends Command
         {--all : Purge invitations in any state}
         {--accepted : Purge accepted invitations}
         {--rejected : Purge rejected invitations}
-        {--force : Ignore the reported check and purge regardless of state reporting}
-        {--days= : Only purge invitations whose expiry is this many days past (defaults to purge.expiration_in_days)}';
+        {--force : Purge past-due invitations even if their expiry was never dispatched}
+        {--days= : Only purge invitations whose expiry is this many days past (defaults to purge.expired_days)}';
 
     /**
      * The console command description.
@@ -33,7 +33,7 @@ class PurgeExpiredInvitations extends Command
      */
     public function handle(): int
     {
-        $days = $this->option('days') ?? config('invitations.purge.expiration_in_days', false);
+        $days = $this->option('days') ?? config('invitations.purge.expired_days', false);
 
         if ($days === false) {
             return Command::SUCCESS;

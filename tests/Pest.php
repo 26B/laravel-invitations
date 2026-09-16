@@ -2,16 +2,16 @@
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
-use TwentySixB\LaravelInvitations\Tests\Invitable;
+use TwentySixB\LaravelInvitations\Tests\Recipient;
 use TwentySixB\LaravelInvitations\Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class)->in('.');
 
-function invitable(): Invitable
+function recipient(): Recipient
 {
-    $invitable = new Invitable;
-    $invitable->id = (string) Str::uuid();
-    $invitable->save();
+    $recipient = new Recipient;
+    $recipient->id = (string) Str::uuid();
+    $recipient->save();
 
-    return $invitable;
+    return $recipient;
 }

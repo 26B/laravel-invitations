@@ -10,6 +10,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `InvitationCreated` event, dispatched whenever an invitation is created, as the hook for sending application-defined notifications.
+- `Invitation::isPending()` state check, consistent with `scopePending()`.
+
+### Changed
+
+**Breaking** — the following rename public classes, methods, config keys, and database columns. The `invitations` table must be rebuilt (see the upgrade notice in the README).
+
+- Renamed the invitation parties to `sender` and `recipient` (previously `author` and `invitable`). This affects:
+  - the `sender_type` / `sender_id` and `recipient_type` / `recipient_id` columns;
+  - the `Invitation::sender()` and `Invitation::recipient()` relations;
+  - the factory states `fromSender()` and `forRecipient()` (previously `from()` and `forInvitable()`);
+  - the `InvitationPolicy` checks and the `HasInvitations` morph name.
+- Renamed the `active` state to `pending`: `scopeActive()` is now `scopePending()`.
+- Renamed `InvitationExpiredException` to `InvitationAlreadyExpiredException` (message now reads "already expired").
+- Renamed the `PurgeExpiredInvitations` command class to `PurgeInvitations` (the `invitations:purge` signature is unchanged).
+- Renamed the `purge.expiration_in_days` config key to `purge.expired_days`.
+- `Invitation::expire()` now expires the invitation immediately: it sets `expires_at` to now, persists the model, stamps `expired_dispatched_at`, and dispatches `InvitationExpired`. It previously only set `expires_at` in memory. Invitations that are already accepted or rejected are left untouched.
+
+### Fixed
+
+- An invitation is now considered expired at `expires_at` itself (previously only strictly after it), so `isExpired()` and `scopeExpired()` agree with the stored timestamp and `expire()` takes effect immediately.
+- Console command descriptions, `--force` help, and documentation now consistently say "dispatch" instead of "report".
+
+### Removed
+
+- Stale TODOs in the `recreate_invitations_table` migration and the unused `TestCase::invitable()` helper.
 
 ## [0.0.2] - 2026-09-16
 

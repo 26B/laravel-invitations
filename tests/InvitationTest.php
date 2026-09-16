@@ -10,8 +10,8 @@ use TwentySixB\LaravelInvitations\Events\InvitationCreated;
 use TwentySixB\LaravelInvitations\Events\InvitationExpired;
 use TwentySixB\LaravelInvitations\Events\InvitationRejected;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyAcceptedException;
+use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyExpiredException;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyRejectedException;
-use TwentySixB\LaravelInvitations\Exceptions\InvitationExpiredException;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 use TwentySixB\LaravelInvitations\Tests\Account;
 use TwentySixB\LaravelInvitations\Tests\User;
@@ -19,7 +19,7 @@ use TwentySixB\LaravelInvitations\Tests\User;
 test('accept sets accepted_at and dispatches the event', function () {
     Event::fake();
 
-    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $invitation = Invitation::factory()->forRecipient(recipient())->create();
 
     $invitation->accept();
 
@@ -31,22 +31,22 @@ test('accept sets accepted_at and dispatches the event', function () {
 test('accept throws when already accepted', function () {
     Carbon::setTestNow('2026-01-01 12:00:00');
 
-    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $invitation = Invitation::factory()->forRecipient(recipient())->create();
     $invitation->accept();
 
     $invitation->accept();
 })->throws(InvitationAlreadyAcceptedException::class, 'This invitation has already been accepted on 2026-01-01 12:00:00.');
 
 test('reject on an accepted invitation throws', function () {
-    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $invitation = Invitation::factory()->forRecipient(recipient())->create();
     $invitation->accept();
 
     $invitation->reject();
 })->throws(InvitationAlreadyAcceptedException::class);
 
 test('isExpired is consistent with the expired scope', function () {
-    $expired = Invitation::factory()->expired()->forInvitable(invitable())->create();
-    $resolvedPastDue = Invitation::factory()->expired()->accepted()->forInvitable(invitable())->create();
+    $expired = Invitation::factory()->expired()->forRecipient(recipient())->create();
+    $resolvedPastDue = Invitation::factory()->expired()->accepted()->forRecipient(recipient())->create();
 
     expect($expired->isExpired())->toBeTrue()
         ->and($resolvedPastDue->isExpired())->toBeFalse();
@@ -55,15 +55,15 @@ test('isExpired is consistent with the expired scope', function () {
 test('accept on an expired invitation throws', function () {
     Carbon::setTestNow('2026-01-01 12:00:00');
 
-    $invitation = Invitation::factory()->expired()->forInvitable(invitable())->create();
+    $invitation = Invitation::factory()->expired()->forRecipient(recipient())->create();
 
     $invitation->accept();
-})->throws(InvitationExpiredException::class, 'This invitation has expired on 2026-01-01 11:00:00.');
+})->throws(InvitationAlreadyExpiredException::class, 'This invitation has already expired on 2026-01-01 11:00:00.');
 
 test('reject sets rejected_at and dispatches the event', function () {
     Event::fake();
 
-    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $invitation = Invitation::factory()->forRecipient(recipient())->create();
 
     $invitation->reject();
 
@@ -75,22 +75,22 @@ test('reject sets rejected_at and dispatches the event', function () {
 test('reject throws when already rejected', function () {
     Carbon::setTestNow('2026-01-01 12:00:00');
 
-    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $invitation = Invitation::factory()->forRecipient(recipient())->create();
     $invitation->reject();
 
     $invitation->reject();
 })->throws(InvitationAlreadyRejectedException::class, 'This invitation has already been rejected on 2026-01-01 12:00:00.');
 
-test('active and expired scopes exclude resolved invitations', function () {
-    $active = Invitation::factory()->forInvitable(invitable())->create();
-    $expired = Invitation::factory()->expired()->forInvitable(invitable())->create();
-    $resolvedPastDue = Invitation::factory()->expired()->accepted()->forInvitable(invitable())->create();
+test('pending and expired scopes exclude resolved invitations', function () {
+    $pending = Invitation::factory()->forRecipient(recipient())->create();
+    $expired = Invitation::factory()->expired()->forRecipient(recipient())->create();
+    $resolvedPastDue = Invitation::factory()->expired()->accepted()->forRecipient(recipient())->create();
 
-    $activeIds = Invitation::active()->pluck('id');
+    $pendingIds = Invitation::pending()->pluck('id');
     $expiredIds = Invitation::expired()->pluck('id');
 
-    expect($activeIds)->toContain($active->id)
-        ->and($activeIds)->not->toContain($expired->id)
+    expect($pendingIds)->toContain($pending->id)
+        ->and($pendingIds)->not->toContain($expired->id)
         ->and($expiredIds)->toContain($expired->id)
         ->and($expiredIds)->not->toContain($resolvedPastDue->id);
 });
@@ -99,66 +99,66 @@ test('has invitations returns only invitations addressed to the model', function
     $user = User::factory()->create();
     $other = User::factory()->create();
 
-    $mine = Invitation::factory()->forInvitable($user)->create();
-    Invitation::factory()->forInvitable($other)->create();
+    $mine = Invitation::factory()->forRecipient($user)->create();
+    Invitation::factory()->forRecipient($other)->create();
 
     $ids = $user->invitations()->where('code', $mine->code)->pluck('id');
 
     expect($ids->all())->toBe([$mine->id]);
 });
 
-test('invitations resolve their invitable and author', function () {
-    $author = User::factory()->create();
+test('invitations resolve their recipient and sender', function () {
+    $sender = User::factory()->create();
     $recipient = User::factory()->create();
 
-    $invitation = Invitation::factory()->from($author)->forInvitable($recipient)->create();
+    $invitation = Invitation::factory()->fromSender($sender)->forRecipient($recipient)->create();
 
-    expect($invitation->author->is($author))->toBeTrue()
-        ->and($invitation->invitable->is($recipient))->toBeTrue()
+    expect($invitation->sender->is($sender))->toBeTrue()
+        ->and($invitation->recipient->is($recipient))->toBeTrue()
         ->and($recipient->invitations->first()->is($invitation))->toBeTrue();
 });
 
-test('the recipient and author may view and delete the invitation', function () {
-    $author = User::factory()->create();
+test('the recipient and sender may view and delete the invitation', function () {
+    $sender = User::factory()->create();
     $recipient = User::factory()->create();
     $stranger = User::factory()->create();
 
-    $invitation = Invitation::factory()->from($author)->forInvitable($recipient)->create();
+    $invitation = Invitation::factory()->fromSender($sender)->forRecipient($recipient)->create();
 
     expect($recipient->can('view', $invitation))->toBeTrue()
         ->and($recipient->can('delete', $invitation))->toBeTrue()
-        ->and($author->can('view', $invitation))->toBeTrue()
-        ->and($author->can('delete', $invitation))->toBeTrue()
+        ->and($sender->can('view', $invitation))->toBeTrue()
+        ->and($sender->can('delete', $invitation))->toBeTrue()
         ->and($stranger->can('view', $invitation))->toBeFalse()
         ->and($stranger->can('delete', $invitation))->toBeFalse();
 });
 
-test('an invitation without an author is only visible to the recipient', function () {
+test('an invitation without a sender is only visible to the recipient', function () {
     $recipient = User::factory()->create();
     $stranger = User::factory()->create();
 
-    $invitation = Invitation::factory()->forInvitable($recipient)->create();
+    $invitation = Invitation::factory()->forRecipient($recipient)->create();
 
-    expect($invitation->author_type)->toBeNull()
+    expect($invitation->sender_type)->toBeNull()
         ->and($recipient->can('view', $invitation))->toBeTrue()
         ->and($stranger->can('view', $invitation))->toBeFalse();
 });
 
 test('policy matches models with integer keys', function () {
-    $author = Account::create();
+    $sender = Account::create();
     $recipient = Account::create();
     $stranger = Account::create();
 
-    $invitation = Invitation::factory()->from($author)->forInvitable($recipient)->create();
+    $invitation = Invitation::factory()->fromSender($sender)->forRecipient($recipient)->create();
 
     expect(Gate::forUser($recipient)->allows('view', $invitation))->toBeTrue()
         ->and(Gate::forUser($recipient)->allows('delete', $invitation))->toBeTrue()
-        ->and(Gate::forUser($author)->allows('view', $invitation))->toBeTrue()
+        ->and(Gate::forUser($sender)->allows('view', $invitation))->toBeTrue()
         ->and(Gate::forUser($stranger)->allows('view', $invitation))->toBeFalse();
 });
 
 test('accept is atomic against a concurrent accept', function () {
-    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $invitation = Invitation::factory()->forRecipient(recipient())->create();
     $stale = Invitation::find($invitation->id);
 
     $invitation->accept();
@@ -167,7 +167,7 @@ test('accept is atomic against a concurrent accept', function () {
 })->throws(InvitationAlreadyAcceptedException::class);
 
 test('reject is atomic against a stalled concurrent accept', function () {
-    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $invitation = Invitation::factory()->forRecipient(recipient())->create();
     $stale = Invitation::find($invitation->id);
 
     $invitation->accept();
@@ -176,7 +176,7 @@ test('reject is atomic against a stalled concurrent accept', function () {
 })->throws(InvitationAlreadyAcceptedException::class);
 
 test('reject is atomic against a stalled concurrent reject', function () {
-    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $invitation = Invitation::factory()->forRecipient(recipient())->create();
     $stale = Invitation::find($invitation->id);
 
     $invitation->reject();
@@ -185,28 +185,28 @@ test('reject is atomic against a stalled concurrent reject', function () {
 })->throws(InvitationAlreadyRejectedException::class);
 
 test('purge removes only stamped expired invitations past the cutoff by default', function () {
-    $expired = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
-    $unreported = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
-    $pending = Invitation::factory()->forInvitable(invitable())->pending()->create();
-    $accepted = Invitation::factory()->forInvitable(invitable())->accepted()->create(['expires_at' => now()->subDays(40)]);
-    $rejected = Invitation::factory()->forInvitable(invitable())->rejected()->create(['expires_at' => now()->subDays(40)]);
+    $expired = Invitation::factory()->forRecipient(recipient())->create(['expires_at' => now()->subDays(40)]);
+    $undispatched = Invitation::factory()->forRecipient(recipient())->create(['expires_at' => now()->subDays(40)]);
+    $pending = Invitation::factory()->forRecipient(recipient())->pending()->create();
+    $accepted = Invitation::factory()->forRecipient(recipient())->accepted()->create(['expires_at' => now()->subDays(40)]);
+    $rejected = Invitation::factory()->forRecipient(recipient())->rejected()->create(['expires_at' => now()->subDays(40)]);
 
     $expired->forceFill(['expired_dispatched_at' => now()])->save();
 
     $this->artisan('invitations:purge')->assertSuccessful();
 
     expect(Invitation::find($expired->id))->toBeNull()
-        ->and(Invitation::find($unreported->id))->not->toBeNull()
+        ->and(Invitation::find($undispatched->id))->not->toBeNull()
         ->and(Invitation::find($pending->id))->not->toBeNull()
         ->and(Invitation::find($accepted->id))->not->toBeNull()
         ->and(Invitation::find($rejected->id))->not->toBeNull();
 });
 
-test('dispatch-expired stamps and reports each expired invitation once', function () {
+test('dispatch-expired stamps and dispatches each expired invitation once', function () {
     Event::fake();
 
-    $expired = Invitation::factory()->forInvitable(invitable())->expired()->create();
-    $recent = Invitation::factory()->forInvitable(invitable())->pending()->create();
+    $expired = Invitation::factory()->forRecipient(recipient())->expired()->create();
+    $recent = Invitation::factory()->forRecipient(recipient())->pending()->create();
 
     $this->artisan('invitations:dispatch-expired')->assertSuccessful();
     $this->artisan('invitations:dispatch-expired')->assertSuccessful();
@@ -217,9 +217,55 @@ test('dispatch-expired stamps and reports each expired invitation once', functio
         ->and($recent->fresh()->expired_dispatched_at)->toBeNull();
 });
 
-test('purge with force removes unreported expired invitations', function () {
-    $expired = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
-    $recent = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(5)]);
+test('expire sets expires_at to now, stamps the dispatch and fires the event', function () {
+    Carbon::setTestNow('2026-01-01 12:00:00');
+    Event::fake([InvitationExpired::class]);
+
+    $invitation = Invitation::factory()->forRecipient(recipient())->create(['expires_at' => now()->addDays(7)]);
+
+    expect($invitation->isPending())->toBeTrue();
+
+    $invitation->expire();
+
+    expect($invitation->isExpired())->toBeTrue()
+        ->and($invitation->isPending())->toBeFalse()
+        ->and($invitation->expires_at->toDateTimeString())->toBe('2026-01-01 12:00:00')
+        ->and($invitation->fresh()->expired_dispatched_at)->not->toBeNull();
+
+    Event::assertDispatched(InvitationExpired::class);
+});
+
+test('expire leaves resolved invitations untouched', function () {
+    Carbon::setTestNow('2026-01-01 12:00:00');
+    Event::fake([InvitationExpired::class]);
+
+    $invitation = Invitation::factory()->forRecipient(recipient())->create(['expires_at' => now()->addDays(7)]);
+    $invitation->accept();
+
+    $invitation->expire();
+
+    expect($invitation->isAccepted())->toBeTrue()
+        ->and($invitation->expires_at->toDateTimeString())->toBe('2026-01-08 12:00:00')
+        ->and($invitation->fresh()->expired_dispatched_at)->toBeNull();
+
+    Event::assertNotDispatched(InvitationExpired::class);
+});
+
+test('an invitation expired by expire() is not dispatched again by the command', function () {
+    Carbon::setTestNow('2026-01-01 12:00:00');
+    Event::fake([InvitationExpired::class]);
+
+    $invitation = Invitation::factory()->forRecipient(recipient())->create(['expires_at' => now()->addDays(7)]);
+    $invitation->expire();
+
+    $this->artisan('invitations:dispatch-expired')->assertSuccessful();
+
+    Event::assertDispatched(InvitationExpired::class, 1);
+});
+
+test('purge with force removes undispatched expired invitations', function () {
+    $expired = Invitation::factory()->forRecipient(recipient())->create(['expires_at' => now()->subDays(40)]);
+    $recent = Invitation::factory()->forRecipient(recipient())->create(['expires_at' => now()->subDays(5)]);
 
     $this->artisan('invitations:purge --force --days=30')->assertSuccessful();
 
@@ -227,8 +273,8 @@ test('purge with force removes unreported expired invitations', function () {
         ->and(Invitation::find($recent->id))->not->toBeNull();
 });
 
-test('purge leaves unreported expired invitations for the dispatch job', function () {
-    $expired = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
+test('purge leaves undispatched expired invitations for the dispatch job', function () {
+    $expired = Invitation::factory()->forRecipient(recipient())->create(['expires_at' => now()->subDays(40)]);
 
     $this->artisan('invitations:purge')->assertSuccessful();
     $this->artisan('invitations:dispatch-expired')->assertSuccessful();
@@ -241,8 +287,8 @@ test('purge leaves unreported expired invitations for the dispatch job', functio
 });
 
 test('purge can target accepted invitations', function () {
-    $accepted = Invitation::factory()->forInvitable(invitable())->accepted()->create(['expires_at' => now()->subDays(40)]);
-    $rejected = Invitation::factory()->forInvitable(invitable())->rejected()->create(['expires_at' => now()->subDays(40)]);
+    $accepted = Invitation::factory()->forRecipient(recipient())->accepted()->create(['expires_at' => now()->subDays(40)]);
+    $rejected = Invitation::factory()->forRecipient(recipient())->rejected()->create(['expires_at' => now()->subDays(40)]);
 
     $this->artisan('invitations:purge --accepted')->assertSuccessful();
 
@@ -251,8 +297,8 @@ test('purge can target accepted invitations', function () {
 });
 
 test('purge can target rejected invitations', function () {
-    $accepted = Invitation::factory()->forInvitable(invitable())->accepted()->create(['expires_at' => now()->subDays(40)]);
-    $rejected = Invitation::factory()->forInvitable(invitable())->rejected()->create(['expires_at' => now()->subDays(40)]);
+    $accepted = Invitation::factory()->forRecipient(recipient())->accepted()->create(['expires_at' => now()->subDays(40)]);
+    $rejected = Invitation::factory()->forRecipient(recipient())->rejected()->create(['expires_at' => now()->subDays(40)]);
 
     $this->artisan('invitations:purge --rejected')->assertSuccessful();
 
@@ -261,8 +307,8 @@ test('purge can target rejected invitations', function () {
 });
 
 test('purge can target all states', function () {
-    $expired = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
-    $accepted = Invitation::factory()->forInvitable(invitable())->accepted()->create(['expires_at' => now()->subDays(40)]);
+    $expired = Invitation::factory()->forRecipient(recipient())->create(['expires_at' => now()->subDays(40)]);
+    $accepted = Invitation::factory()->forRecipient(recipient())->accepted()->create(['expires_at' => now()->subDays(40)]);
 
     $this->artisan('invitations:purge --all')->assertSuccessful();
 
@@ -271,8 +317,8 @@ test('purge can target all states', function () {
 });
 
 test('purge respects the days cutoff', function () {
-    $older = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
-    $recent = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(5)]);
+    $older = Invitation::factory()->forRecipient(recipient())->create(['expires_at' => now()->subDays(40)]);
+    $recent = Invitation::factory()->forRecipient(recipient())->create(['expires_at' => now()->subDays(5)]);
 
     $older->forceFill(['expired_dispatched_at' => now()])->save();
 
@@ -285,15 +331,15 @@ test('purge respects the days cutoff', function () {
 test('code is unique', function () {
     $code = Str::uuid();
 
-    Invitation::factory()->forInvitable(invitable())->create(['code' => $code]);
+    Invitation::factory()->forRecipient(recipient())->create(['code' => $code]);
 
-    Invitation::factory()->forInvitable(invitable())->create(['code' => $code]);
+    Invitation::factory()->forRecipient(recipient())->create(['code' => $code]);
 })->throws(QueryException::class);
 
 test('creating an invitation dispatches the created event', function () {
     Event::fake([InvitationCreated::class]);
 
-    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $invitation = Invitation::factory()->forRecipient(recipient())->create();
 
     Event::assertDispatched(
         InvitationCreated::class,

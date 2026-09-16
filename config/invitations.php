@@ -11,7 +11,7 @@ return [
          * Set to false if you don't want purging to remove anything by default.
          * Override per-run with the `--days=` command argument.
          */
-        'expiration_in_days' => 30,
+        'expired_days' => 30,
     ],
 
 ];

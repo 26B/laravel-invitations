@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property string $id
  */
-class Invitable extends Model
+class Recipient extends Model
 {
     public $incrementing = false;
 

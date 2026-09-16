@@ -14,7 +14,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('invitables', function (Blueprint $table) {
+        Schema::create('recipients', function (Blueprint $table) {
             $table->uuid('id')->primary();
         });
 
@@ -26,7 +26,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('accounts');
-        Schema::dropIfExists('invitables');
+        Schema::dropIfExists('recipients');
         Schema::dropIfExists('users');
     }
 };

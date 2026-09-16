@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Gate;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use TwentySixB\LaravelInvitations\Console\Commands\DispatchExpiredInvitations;
-use TwentySixB\LaravelInvitations\Console\Commands\PurgeExpiredInvitations;
+use TwentySixB\LaravelInvitations\Console\Commands\PurgeInvitations;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 use TwentySixB\LaravelInvitations\Policies\InvitationPolicy;
 
@@ -27,7 +27,7 @@ class InvitationsServiceProvider extends PackageServiceProvider
             ])
             ->hasCommands([
                 DispatchExpiredInvitations::class,
-                PurgeExpiredInvitations::class,
+                PurgeInvitations::class,
             ]);
     }
 

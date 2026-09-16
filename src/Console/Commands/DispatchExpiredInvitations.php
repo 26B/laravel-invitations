@@ -20,7 +20,7 @@ class DispatchExpiredInvitations extends Command
      *
      * @var string
      */
-    protected $description = 'Dispatches an InvitationExpired event for every expired invitation that has not been reported yet';
+    protected $description = 'Dispatches an InvitationExpired event for every expired invitation whose expiry has not been dispatched yet';
 
     /**
      * Execute the console command.
