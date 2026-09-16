@@ -1,16 +1,13 @@
 <?php
 
-namespace  TwentySixB\LaravelInvitations\Events;
+namespace TwentySixB\LaravelInvitations\Events;
 
-use Illuminate\Database\Eloquent\Model;
+use TwentySixB\LaravelInvitations\Models\Invitation;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-/**
- * Used when a user scans an invite code.
- */
-class InviteCodeUsed
+class InvitationExpired
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -20,15 +17,15 @@ class InviteCodeUsed
      * @return void
      */
     public function __construct(
-        protected Model $model
+        protected Invitation $invitation
     ) {
     }
 
     /**
-     * Returns the model.
+     * Returns the Invitation instance.
      */
-    public function getModel(): Model
+    public function getInvitation(): Invitation
     {
-        return $this->model;
+        return $this->invitation;
     }
 }

@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use TwentySixB\LaravelInvitations\Database\Factories\InvitationFactory;
+use TwentySixB\LaravelInvitations\Events\InvitationAccepted;
+use TwentySixB\LaravelInvitations\Events\InvitationRejected;
+use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyAcceptedException;
+use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyRejectedException;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationExpiredException;
 
 /**
@@ -17,7 +21,8 @@ use TwentySixB\LaravelInvitations\Exceptions\InvitationExpiredException;
  * @property string $code
  * @property string $author_id
  * @property array $data
- * @property bool $used
+ * @property Carbon $accepted_at
+ * @property Carbon $rejected_at
  * @property Carbon $expires_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
@@ -34,8 +39,9 @@ class Invitation extends Model
      */
     protected $casts = [
 		'data' => AsArrayObject::class,
+        'accepted_at' => 'datetime',
+        'rejected_at' => 'datetime',
         'expires_at' => 'datetime',
-		'used' => 'boolean',
     ];
 
     /**
@@ -54,13 +60,45 @@ class Invitation extends Model
 		return InvitationFactory::new();
 	}
 
-	public function use() : self
+	public function accept() : self
 	{
 		if ($this->isExpired() === true) {
 			throw new InvitationExpiredException();
 		}
 
-		$this->used = true;
+		if ($this->isAccepted() === true) {
+			throw new InvitationAlreadyAcceptedException();
+		}
+
+		if ($this->isRejected() === true) {
+			throw new InvitationAlreadyRejectedException();
+		}
+
+		$this->accepted_at = now();
+		$this->save();
+		InvitationAccepted::dispatch($this);
+
+		return $this;
+	}
+
+	public function reject() : self
+	{
+		if ($this->isExpired() === true) {
+			throw new InvitationExpiredException();
+		}
+
+		if ($this->isAccepted() === true) {
+			throw new InvitationAlreadyAcceptedException();
+		}
+
+		if ($this->isRejected() === true) {
+			throw new InvitationAlreadyRejectedException();
+		}
+
+		$this->rejected_at = now();
+		$this->save();
+		InvitationRejected::dispatch($this);
+
 		return $this;
 	}
 
@@ -73,6 +111,21 @@ class Invitation extends Model
 	public function isExpired() : bool
 	{
 		return $this->expires_at->lt(now());
+	}
+
+	public function isAccepted() : bool
+	{
+		return $this->accepted_at !== null;
+	}
+
+	public function isRejected() : bool
+	{
+		return $this->rejected_at !== null;
+	}
+
+	public function isResolved() : bool
+	{
+		return $this->isAccepted() || $this->isRejected();
 	}
 
     /**
@@ -91,13 +144,26 @@ class Invitation extends Model
 	public function scopeActive(Builder $query): Builder
     {
         return $query
-			->where('used', false)
-            ->where('expires_at', '<=', now());
+			->whereNull('accepted_at')
+            ->whereNull('rejected_at')
+            ->where('expires_at', '>=', now());
     }
 
 	public function scopeExpired(Builder $query): Builder
     {
         return $query
-            ->where('expires_at', '>', now());
+            ->whereNull('accepted_at')
+            ->whereNull('rejected_at')
+            ->where('expires_at', '<', now());
+    }
+
+	public function scopeAccepted(Builder $query): Builder
+    {
+        return $query->whereNotNull('accepted_at');
+    }
+
+	public function scopeRejected(Builder $query): Builder
+    {
+        return $query->whereNotNull('rejected_at');
     }
 }

@@ -20,7 +20,8 @@ return new class extends Migration
             $table->uuid('author_id');
             $table->uuid('code');
             $table->json('data')->nullable();
-			$table->boolean('used')->default(false);
+            $table->timestamp('accepted_at')->nullable();
+            $table->timestamp('rejected_at')->nullable();
             $table->timestamp('expires_at');
             $table->timestamps();
 

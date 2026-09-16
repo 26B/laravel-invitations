@@ -1,38 +1,6 @@
 <?php
 
-use TwentySixB\LaravelInvitations\Actions\Accept;
-use TwentySixB\LaravelInvitations\Actions\Delete;
-use TwentySixB\LaravelInvitations\Actions\Expired;
-use TwentySixB\LaravelInvitations\Actions\Reject;
-use TwentySixB\LaravelInvitations\Actions\Filter;
-
 return [
-
-    /**
-     * Models that are invitable.
-     *
-     * @var array
-     */
-    'invitables' => [
-		//
-	],
-
-	/**
-	 * Action classes that can customized.
-	 *
-	 */
-	'actions' => [
-		'accept' => Accept::class,
-		'expired' => Expired::class,
-		'reject' => Reject::class,
-		'delete' => Delete::class,
-		'filter' => Filter::class,
-	],
-
-	/**
-	 * Used as redirect when no other route is available.
-	 */
-	'fallback_route' => 'dashboard',
 
 	'purge' => [
 

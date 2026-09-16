@@ -3,6 +3,8 @@
 namespace TwentySixB\LaravelInvitations\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 
 class InvitationFactory extends Factory
@@ -19,32 +21,38 @@ class InvitationFactory extends Factory
      */
     public function definition(): array
     {
-        /** @var HasFactory $invitable */
-        $invitable = $this->faker->randomElement(config('invitations.invitables'));
-
 		$user = config('invitations.models.user');
 
         return [
             'author_id' => $user::factory(),
             'code' => $this->faker->uuid(),
-            'expires_at' => $this->faker->dateTime(now()->addYear()),
-            'invitable_type' => $invitable,
-            'invitable_id' => $invitable::factory(),
-			'used' => $this->faker->boolean(),
+            'expires_at' => Carbon::instance($this->faker->dateTimeBetween('now', '+1 year')),
+            'accepted_at' => null,
+            'rejected_at' => null,
         ];
     }
 
     /**
      * Invitation that hasn't expired.
      */
-    public function unused(): Factory
+    public function pending(): Factory
     {
         return $this->state(function (array $attributes) {
             return [
-				'used' => false,
-                'expires_at' => now()->addYear(),
+                'expires_at' => Carbon::instance($this->faker->dateTimeBetween('now', '+1 year')),
             ];
         });
+    }
+
+    /**
+     * Attach the invitation to an invitable model.
+     */
+    public function forInvitable(Model $invitable): Factory
+    {
+        return $this->state(fn () => [
+            'invitable_type' => $invitable->getMorphClass(),
+            'invitable_id' => $invitable->getKey(),
+        ]);
     }
 
     /**
@@ -52,10 +60,22 @@ class InvitationFactory extends Factory
      */
     public function expired(): Factory
     {
-        return $this->state(function (array $attributes) {
-            return [
-                'expires_at' => $this->faker->dateTime(now()->addYear()),
-            ];
-        });
+        return $this->state(fn () => ['expires_at' => now()->subHour(1)]);
+    }
+
+    /**
+     * Accepted invitation.
+     */
+    public function accepted(): Factory
+    {
+        return $this->state(fn () => ['accepted_at' => now()]);
+    }
+
+    /**
+     * Rejected invitation.
+     */
+    public function rejected(): Factory
+    {
+        return $this->state(fn () => ['rejected_at' => now()]);
     }
 }

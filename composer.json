@@ -4,14 +4,17 @@
     "type": "library",
     "require": {
         "php": "^8.3",
-        "chillerlan/php-qrcode": "^4.3|^5.0",
-        "livewire/livewire": "^3.5",
         "spatie/laravel-package-tools": "^1.93"
     },
     "license": "MIT",
     "autoload": {
         "psr-4": {
             "TwentySixB\\LaravelInvitations\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "TwentySixB\\LaravelInvitations\\Tests\\": "tests/"
         }
     },
     "authors": [
@@ -28,6 +31,12 @@
         }
     },
     "require-dev": {
-        "orchestra/testbench": "^11.0"
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^5.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     }
 }

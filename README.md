@@ -1,6 +1,6 @@
 # Laravel Invitations
 
-Laravel package to invite users to models via invitations with QR codes and Livewire components.
+Laravel package to invite users via time-limited invitations for any invitable model.
 
 > ⚠️ This library is in active development so the API may change.
 
@@ -8,7 +8,6 @@ Laravel package to invite users to models via invitations with QR codes and Live
 
 - PHP `^8.3` (8.3, 8.4, 8.5)
 - Laravel `^13.0`
-- Livewire `^3.5`
 
 ## Installation
 
@@ -30,24 +29,6 @@ php artisan vendor:publish --tag=invitations-config
 
 ```php
 return [
-    // Models that can receive invitations (used by the factory and filters).
-    'invitables' => [
-        // \App\Models\Event::class,
-    ],
-
-    // Action classes that handle invitation lifecycle.
-    // Replace these with your own implementations if you need custom behavior.
-    'actions' => [
-        'accept'  => TwentySixB\LaravelInvitations\Actions\Accept::class,
-        'expired' => TwentySixB\LaravelInvitations\Actions\Expired::class,
-        'reject'  => TwentySixB\LaravelInvitations\Actions\Reject::class,
-        'delete'  => TwentySixB\LaravelInvitations\Actions\Delete::class,
-        'filter'  => TwentySixB\LaravelInvitations\Actions\Filter::class,
-    ],
-
-    // Route name used when no explicit redirect is set.
-    'fallback_route' => 'dashboard',
-
     'purge' => [
         // Delete invitations older than this many days.
         // Set to false to disable purging.
@@ -56,7 +37,7 @@ return [
 
     'models' => [
         // Your application's User model.
-        'user'       => \App\Models\User::class,
+        'user' => \App\Models\User::class,
 
         // Invitation model used by the package.
         'invitation' => \TwentySixB\LaravelInvitations\Models\Invitation::class,
@@ -66,22 +47,24 @@ return [
 
 ## Database
 
-Publish the migration:
+Publish the migrations:
 
 ```bash
 php artisan vendor:publish --tag=invitations-migrations
 ```
 
-The migration creates an `invitations` table with:
+The migrations create an `invitations` table with:
 
 - `id` UUID primary key
 - `invitable_type` / `invitable_id` polymorphic relation
 - `author_id` foreign key to `users.id`
 - `code` UUID invitation code
-- `data` JSON payload (email, user info, redirect, etc.)
-- `used` boolean flag
+- `data` JSON payload (email, user info, etc.)
+- `accepted_at` / `rejected_at` nullable timestamps
 - `expires_at` timestamp
 - `created_at` / `updated_at` timestamps
+
+For installs that already ran the previous version, an upgrade migration converts the old `used` boolean into `accepted_at` (backfilled from `updated_at` for already-accepted invitations) and adds `rejected_at`. New installs get the final schema directly.
 
 Run the migration:
 
@@ -95,12 +78,15 @@ php artisan migrate
 
 The `TwentySixB\LaravelInvitations\Models\Invitation` model provides:
 
-- `use()` — marks the invitation as used and saves it. Throws `InvitationExpiredException` if expired.
-- `expire()` — sets the expiration to one hour ago.
-- `isExpired()` — checks `expires_at` against the current time.
+- `accept()` — throws `InvitationExpiredException` when past due, `InvitationAlreadyAcceptedException` / `InvitationAlreadyRejectedException` when already resolved, otherwise sets `accepted_at` and dispatches `InvitationAccepted`.
+- `reject()` — same guards, sets `rejected_at` and dispatches `InvitationRejected`.
+- `expire()` — sets `expires_at` to one hour ago.
+- `isExpired()`, `isAccepted()`, `isRejected()`, `isResolved()` — state checks.
+- `scopeActive()` — unresolved and not expired.
+- `scopeExpired()` — unresolved and past due (feeds the commands below).
+- `scopeAccepted()` / `scopeRejected()` — resolved invitations.
 - `invitable()` — polymorphic relation to the invited model.
 - `author()` — belongs-to relation to the configured user model.
-- `scopeActive()` / `scopeExpired()` — query scopes.
 
 ### `HasInvitations` trait
 
@@ -121,6 +107,23 @@ Then access invitations with:
 $user->invitations()->get();
 ```
 
+## Handling accept/reject
+
+The package is logic-only — your application decides the HTTP/UX shape:
+
+```php
+try {
+    $invitation->accept();
+    return redirect()->route('home');
+} catch (InvitationAlreadyAcceptedException) {
+    // already used
+} catch (InvitationAlreadyRejectedException) {
+    // already declined
+} catch (InvitationExpiredException) {
+    // too late
+}
+```
+
 ## Authorization
 
 The package registers an `InvitationPolicy` that controls who can view, delete, and create invitations:
@@ -129,116 +132,49 @@ The package registers an `InvitationPolicy` that controls who can view, delete, 
 - `delete` — allowed if the user can view the invitation or if the user is the author.
 - `create` — allowed for everyone by default.
 
-## Livewire components
-
-The package registers two Livewire components:
-
-| Component name           | Class                                                          | Purpose                                          |
-| ------------------------ | -------------------------------------------------------------- | ------------------------------------------------ |
-| `invitations.viewer`     | `TwentySixB\LaravelInvitations\Livewire\Viewer`                | Display and accept/reject a single invitation.   |
-| `invitations.lister`     | `TwentySixB\LaravelInvitations\Livewire\Lister`                | Display a list of invitations for a user/model.  |
-
-Use them in your Blade views:
-
-```blade
-<livewire:invitations.viewer :invitation_id="$invitation->id" />
-
-<livewire:invitations.lister :target="$event" mode="received" />
-```
-
-### Required application views
-
-The Livewire components look for the following views in your application, not in the package:
-
-- `resources/views/livewire/invitations/viewer.blade.php`
-- `resources/views/livewire/invitations/viewer-invitation-missing.blade.php`
-- `resources/views/livewire/invitations/list.blade.php`
-
-You must create these views yourself. The components pass `$invitation` and `$invitations` to the views as needed.
-
-## QR code component
-
-Render a QR code for any URL:
-
-```blade
-<x-invitations::code route="{{ route('events.show', $event) }}?code={{ $invitation->code }}" />
-```
-
-The component renders a base64 data URI inside an `<img>` tag.
-
-If you want to use the included `InvitationController::validateCode`, register the route manually in your application:
-
-```php
-use Illuminate\Support\Facades\Route;
-use TwentySixB\LaravelInvitations\Http\Controllers\InvitationController;
-
-Route::get('/qrcode/scanned/{model}/{id}/{code}', [InvitationController::class, 'validateCode'])
-    ->name('invite.qrcode.scanned');
-```
-
-The controller expects the target model to expose an `invite_code` attribute that matches the scanned code. When validation succeeds it dispatches `InviteCodeUsed`.
-
-> Note: `chillerlan/php-qrcode` v4 returns a PNG data URI by default, while v5 returns an SVG data URI. Both work in the `<img>` tag. Pin `outputType` in `QROptions` if you need a fixed format.
-
-## Actions
-
-Actions are plain static classes resolved from the `invitations.actions` config. You can replace them with custom implementations.
-
-| Action    | Purpose                                                                 |
-| --------- | ----------------------------------------------------------------------- |
-| `Accept`  | Marks an invitation as used, dispatches `InvitationAccepted`, redirects.|
-| `Reject`  | Deletes the invitation and redirects.                                   |
-| `Expired` | Redirects when an invitation has expired.                               |
-| `Delete`  | Deletes an invitation after checking the `delete` gate.                 |
-| `Filter`  | Returns a collection of invitations for the current user or target models.|
-
 ## Events
 
 The package dispatches events you can listen to in your application:
 
-| Event                | Dispatched when                                      | Payload accessors                          |
-| -------------------- | ---------------------------------------------------- | ------------------------------------------ |
-| `InvitationAccepted` | An invitation is accepted.                           | `getInvitation()`                          |
-| `InviteCodeUsed`     | A QR code is scanned and validated.                  | `getModel()`                               |
-| `UserInvited`        | An existing user is invited.                         | `getUser()`, `getTarget()`, `getInviter()` |
-| `InviteByEmail`      | A non-existent user is invited by email.             | `getEmail()`, `getTarget()`, `getInviter()` |
+| Event                 | Dispatched when                                        | Payload accessor |
+| --------------------- | ------------------------------------------------------ | ---------------- |
+| `InvitationAccepted`  | `accept()` succeeds.                                   | `getInvitation()` |
+| `InvitationRejected`  | `reject()` succeeds.                                   | `getInvitation()` |
+| `InvitationExpired`   | `invitations:dispatch-expired` runs for an expired invitation. | `getInvitation()` |
 
 Create listeners with `php artisan make:listener` and register them in your `EventServiceProvider`.
 
-## Console command
+> `InvitationExpired` is at-least-once delivery: it fires on every run of `invitations:dispatch-expired` for still-unsent invitations. Make listeners idempotent.
 
-Purge stale invitations:
+## Console commands
 
 ```bash
-php artisan invitations:purge
+php artisan invitations:purge               # delete stale invitations (retention)
+php artisan invitations:dispatch-expired    # dispatch InvitationExpired for expired invitations
 ```
 
-The command deletes invitations whose `expires_at` is older than `invitations.purge.expiration_in_days`. Set `expiration_in_days` to `false` to disable purging.
+`invitations:purge` deletes invitations whose `expires_at` is older than `invitations.purge.expiration_in_days`. Set `expiration_in_days` to `false` to disable purging.
 
-Schedule the command in `routes/console.php`:
+Schedule the commands in `routes/console.php`:
 
 ```php
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('invitations:purge')->daily();
+Schedule::command('invitations:dispatch-expired')->daily();
+Schedule::command('invitations:purge')->weekly();
 ```
 
-## Views
+## Factory
 
-Publish the package views so you can customize error pages and the QR code component:
+Use the factory with an invitable model:
 
-```bash
-php artisan vendor:publish --tag=invitations-views
+```php
+use TwentySixB\LaravelInvitations\Models\Invitation;
+
+$invitation = Invitation::factory()->forInvitable($event)->create();
 ```
 
-Published views land in `resources/views/vendor/invitations/`.
-
-The package ships with:
-
-- `errors/access-denied.blade.php`
-- `errors/expired.blade.php`
-- `errors/invalid-code.blade.php`
-- `components/code.blade.php`
+State modifiers: `pending()`, `expired()`, `accepted()`, `rejected()`.
 
 ## License
 

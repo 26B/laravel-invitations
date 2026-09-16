@@ -9,7 +9,10 @@ trait HasInvitations {
 
 	public function invitations() : Builder
     {
-        return Invitation::where('data->user->id', $this->getKey())
-			->orWhere('data->user->email', $this->email);
+        return Invitation::where(function (Builder $query) {
+            return $query
+                ->where('data->user->id', $this->getKey())
+                ->orWhere('data->user->email', $this->email);
+        });
     }
 }

@@ -4,16 +4,10 @@ namespace TwentySixB\LaravelInvitations\Exceptions;
 
 use Exception;
 
-class InvitationExpiredException extends Exception {
-
-    /**
-     * Render the exception into an HTTP response.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function render($request)
+class InvitationExpiredException extends Exception
+{
+    public function __construct()
     {
-        return view('invitations::errors.expired')->with('exception', $this);;
+        parent::__construct('This invitation has expired.');
     }
 }
