@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use TwentySixB\LaravelInvitations\Events\InvitationAccepted;
+use TwentySixB\LaravelInvitations\Events\InvitationCreated;
 use TwentySixB\LaravelInvitations\Events\InvitationExpired;
 use TwentySixB\LaravelInvitations\Events\InvitationRejected;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyAcceptedException;
@@ -288,3 +289,14 @@ test('code is unique', function () {
 
     Invitation::factory()->forInvitable(invitable())->create(['code' => $code]);
 })->throws(QueryException::class);
+
+test('creating an invitation dispatches the created event', function () {
+    Event::fake([InvitationCreated::class]);
+
+    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+
+    Event::assertDispatched(
+        InvitationCreated::class,
+        fn (InvitationCreated $event) => $event->getInvitation()->is($invitation),
+    );
+});

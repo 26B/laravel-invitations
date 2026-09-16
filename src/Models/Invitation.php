@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use TwentySixB\LaravelInvitations\Database\Factories\InvitationFactory;
 use TwentySixB\LaravelInvitations\Events\InvitationAccepted;
+use TwentySixB\LaravelInvitations\Events\InvitationCreated;
 use TwentySixB\LaravelInvitations\Events\InvitationRejected;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyAcceptedException;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyRejectedException;
@@ -64,6 +65,13 @@ class Invitation extends Model
     protected static function newFactory(): Factory
     {
         return InvitationFactory::new();
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (Invitation $invitation): void {
+            InvitationCreated::dispatch($invitation);
+        });
     }
 
     public function accept(): self

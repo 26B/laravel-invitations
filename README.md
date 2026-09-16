@@ -190,11 +190,16 @@ The package dispatches events you can listen to in your application:
 
 | Event                 | Dispatched when                                        | Payload accessor |
 | --------------------- | ------------------------------------------------------ | ---------------- |
+| `InvitationCreated`   | an invitation is created.                              | `getInvitation()` |
 | `InvitationAccepted`  | `accept()` succeeds.                                   | `getInvitation()` |
 | `InvitationRejected`  | `reject()` succeeds.                                   | `getInvitation()` |
 | `InvitationExpired`   | `invitations:dispatch-expired` runs for an expired invitation. | `getInvitation()` |
 
 Create listeners with `php artisan make:listener` and register them in your `EventServiceProvider`.
+
+> `InvitationCreated` fires on every creation path, including factories and seeders. This is the hook for sending your own notifications — the package does not define channels or notification classes.
+>
+> It is dispatched from Eloquent's `created` event, so in tests use `Event::fake([InvitationCreated::class])` — a blanket `Event::fake()` also fakes `eloquent.created` and stops this event from firing.
 
 > `InvitationExpired` is sent once per invitation: `invitations:dispatch-expired` stamps `expired_dispatched_at` on each row it reports, so repeated runs do not re-send. Make listeners idempotent anyway, since the reported stamp is written after the dispatch.
 
