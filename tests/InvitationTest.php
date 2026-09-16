@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -117,6 +118,14 @@ test('reject is atomic against a stalled concurrent reject', function () {
 
     $stale->reject();
 })->throws(InvitationAlreadyRejectedException::class);
+
+test('code is unique', function () {
+    $code = Str::uuid();
+
+    Invitation::factory()->forInvitable(invitable())->create(['code' => $code]);
+
+    Invitation::factory()->forInvitable(invitable())->create(['code' => $code]);
+})->throws(QueryException::class);
 
 test('the upgrade migration converts the used schema', function () {
     Schema::dropIfExists('invitations');

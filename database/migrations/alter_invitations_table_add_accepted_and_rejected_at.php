@@ -19,6 +19,7 @@ return new class extends Migration
         Schema::table('invitations', function (Blueprint $table) {
             $table->timestamp('accepted_at')->nullable()->after('data');
             $table->timestamp('rejected_at')->nullable()->after('accepted_at');
+            $table->unique('code');
         });
 
         DB::table('invitations')->where('used', true)->update(['accepted_at' => DB::raw('updated_at')]);
@@ -39,6 +40,7 @@ return new class extends Migration
 
         Schema::table('invitations', function (Blueprint $table) {
             $table->boolean('used')->default(false)->after('data');
+            $table->dropUnique(['code']);
         });
 
         DB::table('invitations')->whereNotNull('accepted_at')->update(['used' => true]);

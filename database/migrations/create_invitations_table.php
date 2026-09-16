@@ -18,7 +18,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuidMorphs('invitable');
             $table->uuid('author_id');
-            $table->uuid('code');
+            $table->uuid('code')->unique();
             $table->json('data')->nullable();
             $table->timestamp('accepted_at')->nullable();
             $table->timestamp('rejected_at')->nullable();

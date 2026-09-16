@@ -58,7 +58,7 @@ The migrations create an `invitations` table with:
 - `id` UUID primary key
 - `invitable_type` / `invitable_id` polymorphic relation
 - `author_id` foreign key to `users.id`
-- `code` UUID invitation code
+- `code` UUID invitation code (unique)
 - `data` JSON payload (email, user info, etc.)
 - `accepted_at` / `rejected_at` nullable timestamps
 - `expires_at` timestamp
