@@ -2,11 +2,12 @@
 
 namespace TwentySixB\LaravelInvitations\Actions;
 
+use Illuminate\Http\RedirectResponse;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 
 class Reject {
 
-	public static function handle(Invitation $invitation) : \Livewire\Redirector
+	public static function handle(Invitation $invitation) : RedirectResponse
 	{
 		// Delete or mark as expired?
 		$invitation->delete();

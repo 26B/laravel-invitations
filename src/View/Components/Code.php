@@ -25,6 +25,7 @@ class Code extends Component
      */
     public function render(): View|Closure|string
     {
+		// ponytail: qrcode v5 defaults to SVG base64; v4 returns PNG base64. Both render in <img>. Pin outputType if you need a fixed format.
 		$qrcode = (new QRCode)->render($this->route);
 
         return view('invitations::components.code')
