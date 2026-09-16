@@ -42,6 +42,14 @@ test('reject on an accepted invitation throws', function () {
     $invitation->reject();
 })->throws(InvitationAlreadyAcceptedException::class);
 
+test('isExpired is consistent with the expired scope', function () {
+    $expired = Invitation::factory()->expired()->forInvitable(invitable())->create();
+    $resolvedPastDue = Invitation::factory()->expired()->accepted()->forInvitable(invitable())->create();
+
+    expect($expired->isExpired())->toBeTrue()
+        ->and($resolvedPastDue->isExpired())->toBeFalse();
+});
+
 test('accept on an expired invitation throws', function () {
     $invitation = Invitation::factory()->expired()->forInvitable(invitable())->create();
 

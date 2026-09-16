@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `accept()` and `reject()` now take effect atomically via a conditional update, so concurrent calls to the same invitation can only resolve it once.
 - `reject()` now persists a `rejected_at` timestamp instead of deleting the invitation.
 - `scopeActive()` / `scopeExpired()` predicates fixed and now exclude resolved invitations.
+- `isExpired()` now excludes resolved invitations, matching `scopeExpired()`.
 - `HasInvitations::invitations()` groups its OR clause so chained constraints apply to both branches.
 - `InvitationExpiredException` no longer renders an HTTP view.
 - `InvitationPolicy` is now registered via the gate; dead `$policies` property removed.

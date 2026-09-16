@@ -82,7 +82,8 @@ The `TwentySixB\LaravelInvitations\Models\Invitation` model provides:
 - `accept()` — atomically marks the invitation accepted: throws `InvitationExpiredException` when past due, `InvitationAlreadyAcceptedException` / `InvitationAlreadyRejectedException` when already resolved, otherwise sets `accepted_at` and dispatches `InvitationAccepted`. Concurrent calls can only succeed once.
 - `reject()` — same atomic guard, sets `rejected_at` and dispatches `InvitationRejected`.
 - `expire()` — sets `expires_at` to one hour ago.
-- `isExpired()`, `isAccepted()`, `isRejected()`, `isResolved()` — state checks.
+- `isExpired()` — unresolved and past due (consistent with `scopeExpired()`).
+- `isAccepted()`, `isRejected()`, `isResolved()` — state checks.
 - `scopeActive()` — unresolved and not expired.
 - `scopeExpired()` — unresolved and past due (feeds the commands below).
 - `scopeAccepted()` / `scopeRejected()` — resolved invitations.
@@ -145,7 +146,7 @@ The package dispatches events you can listen to in your application:
 
 Create listeners with `php artisan make:listener` and register them in your `EventServiceProvider`.
 
-> `InvitationExpired` is at-least-once delivery: it fires on every run of `invitations:dispatch-expired` for still-unsent invitations. Make listeners idempotent.
+> `InvitationExpired` is sent once per invitation: `invitations:dispatch-expired` stamps `expired_dispatched_at` on each row it reports, so repeated runs do not re-send. Make listeners idempotent anyway, since the reported stamp is written after the dispatch.
 
 ## Console commands
 

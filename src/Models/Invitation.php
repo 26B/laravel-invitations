@@ -124,7 +124,7 @@ class Invitation extends Model
 
     public function isExpired(): bool
     {
-        return $this->expires_at->lt(now());
+        return $this->expires_at->lt(now()) && ! $this->isResolved();
     }
 
     public function isAccepted(): bool
