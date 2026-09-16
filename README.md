@@ -153,7 +153,9 @@ php artisan invitations:purge               # delete stale invitations (retentio
 php artisan invitations:dispatch-expired    # dispatch InvitationExpired for expired invitations
 ```
 
-`invitations:purge` deletes invitations whose `expires_at` is older than `invitations.purge.expiration_in_days`. Set `expiration_in_days` to `false` to disable purging.
+`invitations:purge` deletes expired (unresolved and past `expires_at`) invitations whose `expires_at` is older than `invitations.purge.expiration_in_days`. Set `expiration_in_days` to `false` to disable purging.
+
+Target other states with `--accepted`, `--rejected`, or `--all` (any state). Override the age cutoff per run with `--days=`, e.g. `invitations:purge --accepted --days=7`. Combinations like `--accepted` plus `--rejected` purge either state.
 
 Schedule the commands in `routes/console.php`:
 

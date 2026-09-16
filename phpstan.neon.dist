@@ -13,4 +13,7 @@ parameters:
 
     treatPhpDocTypesAsCertain: false
 
+    ignoreErrors:
+        - '#TestCall::artisan\(\)#'
+
     checkModelProperties: false

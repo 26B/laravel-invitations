@@ -119,6 +119,60 @@ test('reject is atomic against a stalled concurrent reject', function () {
     $stale->reject();
 })->throws(InvitationAlreadyRejectedException::class);
 
+test('purge removes only unresolved invitations past the cutoff by default', function () {
+    $expired = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
+    $pending = Invitation::factory()->forInvitable(invitable())->pending()->create();
+    $accepted = Invitation::factory()->forInvitable(invitable())->accepted()->create(['expires_at' => now()->subDays(40)]);
+    $rejected = Invitation::factory()->forInvitable(invitable())->rejected()->create(['expires_at' => now()->subDays(40)]);
+
+    $this->artisan('invitations:purge')->assertSuccessful();
+
+    expect(Invitation::find($expired->id))->toBeNull()
+        ->and(Invitation::find($pending->id))->not->toBeNull()
+        ->and(Invitation::find($accepted->id))->not->toBeNull()
+        ->and(Invitation::find($rejected->id))->not->toBeNull();
+});
+
+test('purge can target accepted invitations', function () {
+    $accepted = Invitation::factory()->forInvitable(invitable())->accepted()->create(['expires_at' => now()->subDays(40)]);
+    $rejected = Invitation::factory()->forInvitable(invitable())->rejected()->create(['expires_at' => now()->subDays(40)]);
+
+    $this->artisan('invitations:purge --accepted')->assertSuccessful();
+
+    expect(Invitation::find($accepted->id))->toBeNull()
+        ->and(Invitation::find($rejected->id))->not->toBeNull();
+});
+
+test('purge can target rejected invitations', function () {
+    $accepted = Invitation::factory()->forInvitable(invitable())->accepted()->create(['expires_at' => now()->subDays(40)]);
+    $rejected = Invitation::factory()->forInvitable(invitable())->rejected()->create(['expires_at' => now()->subDays(40)]);
+
+    $this->artisan('invitations:purge --rejected')->assertSuccessful();
+
+    expect(Invitation::find($accepted->id))->not->toBeNull()
+        ->and(Invitation::find($rejected->id))->toBeNull();
+});
+
+test('purge can target all states', function () {
+    $expired = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
+    $accepted = Invitation::factory()->forInvitable(invitable())->accepted()->create(['expires_at' => now()->subDays(40)]);
+
+    $this->artisan('invitations:purge --all')->assertSuccessful();
+
+    expect(Invitation::find($expired->id))->toBeNull()
+        ->and(Invitation::find($accepted->id))->toBeNull();
+});
+
+test('purge respects the days cutoff', function () {
+    $older = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(40)]);
+    $recent = Invitation::factory()->forInvitable(invitable())->create(['expires_at' => now()->subDays(5)]);
+
+    $this->artisan('invitations:purge --days=30')->assertSuccessful();
+
+    expect(Invitation::find($older->id))->toBeNull()
+        ->and(Invitation::find($recent->id))->not->toBeNull();
+});
+
 test('code is unique', function () {
     $code = Str::uuid();
 

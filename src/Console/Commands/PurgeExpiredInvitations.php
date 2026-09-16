@@ -3,6 +3,7 @@
 namespace TwentySixB\LaravelInvitations\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 
@@ -13,34 +14,50 @@ class PurgeExpiredInvitations extends Command
      *
      * @var string
      */
-    protected $signature = 'invitations:purge';
+    protected $signature = 'invitations:purge
+        {--all : Purge invitations in any state}
+        {--accepted : Purge accepted invitations}
+        {--rejected : Purge rejected invitations}
+        {--days= : Only purge invitations whose expiry is this many days past (defaults to purge.expiration_in_days)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Purges expired invitations when they become stale';
+    protected $description = 'Purges stale invitations (expired by default)';
 
     /**
      * Execute the console command.
      */
     public function handle(): int
     {
-        $expiration_in_days = config('invitations.purge.expiration_in_days', false);
+        $days = $this->option('days') ?? config('invitations.purge.expiration_in_days', false);
 
-        if ($expiration_in_days === false) {
+        if ($days === false) {
             return Command::SUCCESS;
         }
 
-        Invitation::orderBy('expires_at', 'asc')
-            ->where(
-                'expires_at',
-                '<',
-                Carbon::now()->subDays($expiration_in_days)
-            )
-            ->limit(50)
-            ->delete();
+        $query = Invitation::query()
+            ->where('expires_at', '<', Carbon::now()->subDays((int) $days))
+            ->orderBy('expires_at', 'asc')
+            ->limit(50);
+
+        $query->where(function (Builder $purge) {
+            if ($this->option('accepted')) {
+                $purge->orWhereNotNull('accepted_at');
+            }
+
+            if ($this->option('rejected')) {
+                $purge->orWhereNotNull('rejected_at');
+            }
+
+            if (! $this->option('all') && ! $this->option('accepted') && ! $this->option('rejected')) {
+                $purge->whereNull('accepted_at')->whereNull('rejected_at');
+            }
+        });
+
+        $query->delete();
 
         return Command::SUCCESS;
     }
