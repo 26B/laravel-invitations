@@ -4,6 +4,7 @@
     "type": "library",
     "require": {
         "php": "^8.4",
+        "laravel/framework": "^13.0",
         "spatie/laravel-package-tools": "^1.93"
     },
     "license": "MIT",
