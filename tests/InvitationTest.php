@@ -91,6 +91,33 @@ test('has invitations groups the OR clause so chained constraints apply to both 
     expect($ids->all())->toBe([$forUser->id]);
 });
 
+test('accept is atomic against a concurrent accept', function () {
+    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $stale = Invitation::find($invitation->id);
+
+    $invitation->accept();
+
+    $stale->accept();
+})->throws(InvitationAlreadyAcceptedException::class);
+
+test('reject is atomic against a stalled concurrent accept', function () {
+    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $stale = Invitation::find($invitation->id);
+
+    $invitation->accept();
+
+    $stale->reject();
+})->throws(InvitationAlreadyAcceptedException::class);
+
+test('reject is atomic against a stalled concurrent reject', function () {
+    $invitation = Invitation::factory()->forInvitable(invitable())->create();
+    $stale = Invitation::find($invitation->id);
+
+    $invitation->reject();
+
+    $stale->reject();
+})->throws(InvitationAlreadyRejectedException::class);
+
 test('the upgrade migration converts the used schema', function () {
     Schema::dropIfExists('invitations');
     Schema::create('invitations', function (Blueprint $table) {

@@ -63,20 +63,7 @@ class Invitation extends Model
 
     public function accept(): self
     {
-        if ($this->isExpired() === true) {
-            throw new InvitationExpiredException;
-        }
-
-        if ($this->isAccepted() === true) {
-            throw new InvitationAlreadyAcceptedException;
-        }
-
-        if ($this->isRejected() === true) {
-            throw new InvitationAlreadyRejectedException;
-        }
-
-        $this->accepted_at = now();
-        $this->save();
+        $this->resolve('accepted_at');
         InvitationAccepted::dispatch($this);
 
         return $this;
@@ -84,23 +71,46 @@ class Invitation extends Model
 
     public function reject(): self
     {
-        if ($this->isExpired() === true) {
-            throw new InvitationExpiredException;
-        }
-
-        if ($this->isAccepted() === true) {
-            throw new InvitationAlreadyAcceptedException;
-        }
-
-        if ($this->isRejected() === true) {
-            throw new InvitationAlreadyRejectedException;
-        }
-
-        $this->rejected_at = now();
-        $this->save();
+        $this->resolve('rejected_at');
         InvitationRejected::dispatch($this);
 
         return $this;
+    }
+
+    private function resolve(string $column): void
+    {
+        $updated = Invitation::query()
+            ->whereKey($this->getKey())
+            ->whereNull('accepted_at')
+            ->whereNull('rejected_at')
+            ->where('expires_at', '>=', now())
+            ->update([$column => now()]);
+
+        if ($updated > 0) {
+            $this->refresh();
+
+            return;
+        }
+
+        $this->refresh();
+
+        if ($this->isExpired()) {
+            throw new InvitationExpiredException;
+        }
+
+        if ($column === 'accepted_at') {
+            if ($this->isAccepted()) {
+                throw new InvitationAlreadyAcceptedException;
+            }
+
+            throw new InvitationAlreadyRejectedException;
+        }
+
+        if ($this->isRejected()) {
+            throw new InvitationAlreadyRejectedException;
+        }
+
+        throw new InvitationAlreadyAcceptedException;
     }
 
     public function expire(): self

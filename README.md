@@ -78,8 +78,8 @@ php artisan migrate
 
 The `TwentySixB\LaravelInvitations\Models\Invitation` model provides:
 
-- `accept()` — throws `InvitationExpiredException` when past due, `InvitationAlreadyAcceptedException` / `InvitationAlreadyRejectedException` when already resolved, otherwise sets `accepted_at` and dispatches `InvitationAccepted`.
-- `reject()` — same guards, sets `rejected_at` and dispatches `InvitationRejected`.
+- `accept()` — atomically marks the invitation accepted: throws `InvitationExpiredException` when past due, `InvitationAlreadyAcceptedException` / `InvitationAlreadyRejectedException` when already resolved, otherwise sets `accepted_at` and dispatches `InvitationAccepted`. Concurrent calls can only succeed once.
+- `reject()` — same atomic guard, sets `rejected_at` and dispatches `InvitationRejected`.
 - `expire()` — sets `expires_at` to one hour ago.
 - `isExpired()`, `isAccepted()`, `isRejected()`, `isResolved()` — state checks.
 - `scopeActive()` — unresolved and not expired.
