@@ -58,7 +58,7 @@ class Invitation extends Model
     protected $guarded = [
         'created_at',
         'id',
-        'modified_at',
+        'updated_at',
     ];
 
     protected static function newFactory(): Factory
@@ -100,22 +100,22 @@ class Invitation extends Model
         $this->refresh();
 
         if ($this->isExpired()) {
-            throw new InvitationExpiredException;
+            throw new InvitationExpiredException($this->expires_at);
         }
 
         if ($column === 'accepted_at') {
             if ($this->isAccepted()) {
-                throw new InvitationAlreadyAcceptedException;
+                throw new InvitationAlreadyAcceptedException($this->accepted_at);
             }
 
-            throw new InvitationAlreadyRejectedException;
+            throw new InvitationAlreadyRejectedException($this->rejected_at);
         }
 
         if ($this->isRejected()) {
-            throw new InvitationAlreadyRejectedException;
+            throw new InvitationAlreadyRejectedException($this->rejected_at);
         }
 
-        throw new InvitationAlreadyAcceptedException;
+        throw new InvitationAlreadyAcceptedException($this->accepted_at);
     }
 
     public function expire(): self

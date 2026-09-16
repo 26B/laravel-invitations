@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -27,11 +28,13 @@ test('accept sets accepted_at and dispatches the event', function () {
 });
 
 test('accept throws when already accepted', function () {
+    Carbon::setTestNow('2026-01-01 12:00:00');
+
     $invitation = Invitation::factory()->forInvitable(invitable())->create();
     $invitation->accept();
 
     $invitation->accept();
-})->throws(InvitationAlreadyAcceptedException::class);
+})->throws(InvitationAlreadyAcceptedException::class, 'This invitation has already been accepted on 2026-01-01 12:00:00.');
 
 test('reject on an accepted invitation throws', function () {
     $invitation = Invitation::factory()->forInvitable(invitable())->create();
@@ -49,10 +52,12 @@ test('isExpired is consistent with the expired scope', function () {
 });
 
 test('accept on an expired invitation throws', function () {
+    Carbon::setTestNow('2026-01-01 12:00:00');
+
     $invitation = Invitation::factory()->expired()->forInvitable(invitable())->create();
 
     $invitation->accept();
-})->throws(InvitationExpiredException::class);
+})->throws(InvitationExpiredException::class, 'This invitation has expired on 2026-01-01 11:00:00.');
 
 test('reject sets rejected_at and dispatches the event', function () {
     Event::fake();
@@ -67,11 +72,13 @@ test('reject sets rejected_at and dispatches the event', function () {
 });
 
 test('reject throws when already rejected', function () {
+    Carbon::setTestNow('2026-01-01 12:00:00');
+
     $invitation = Invitation::factory()->forInvitable(invitable())->create();
     $invitation->reject();
 
     $invitation->reject();
-})->throws(InvitationAlreadyRejectedException::class);
+})->throws(InvitationAlreadyRejectedException::class, 'This invitation has already been rejected on 2026-01-01 12:00:00.');
 
 test('active and expired scopes exclude resolved invitations', function () {
     $active = Invitation::factory()->forInvitable(invitable())->create();
