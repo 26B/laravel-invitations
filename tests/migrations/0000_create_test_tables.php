@@ -17,10 +17,15 @@ return new class extends Migration
         Schema::create('invitables', function (Blueprint $table) {
             $table->uuid('id')->primary();
         });
+
+        Schema::create('accounts', function (Blueprint $table) {
+            $table->id();
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('accounts');
         Schema::dropIfExists('invitables');
         Schema::dropIfExists('users');
     }

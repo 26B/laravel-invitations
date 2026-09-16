@@ -2,6 +2,7 @@
 
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use TwentySixB\LaravelInvitations\Events\InvitationAccepted;
 use TwentySixB\LaravelInvitations\Events\InvitationExpired;
@@ -10,6 +11,7 @@ use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyAcceptedException;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyRejectedException;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationExpiredException;
 use TwentySixB\LaravelInvitations\Models\Invitation;
+use TwentySixB\LaravelInvitations\Tests\Account;
 use TwentySixB\LaravelInvitations\Tests\User;
 
 test('accept sets accepted_at and dispatches the event', function () {
@@ -132,6 +134,19 @@ test('an invitation without an author is only visible to the recipient', functio
     expect($invitation->author_type)->toBeNull()
         ->and($recipient->can('view', $invitation))->toBeTrue()
         ->and($stranger->can('view', $invitation))->toBeFalse();
+});
+
+test('policy matches models with integer keys', function () {
+    $author = Account::create();
+    $recipient = Account::create();
+    $stranger = Account::create();
+
+    $invitation = Invitation::factory()->from($author)->forInvitable($recipient)->create();
+
+    expect(Gate::forUser($recipient)->allows('view', $invitation))->toBeTrue()
+        ->and(Gate::forUser($recipient)->allows('delete', $invitation))->toBeTrue()
+        ->and(Gate::forUser($author)->allows('view', $invitation))->toBeTrue()
+        ->and(Gate::forUser($stranger)->allows('view', $invitation))->toBeFalse();
 });
 
 test('accept is atomic against a concurrent accept', function () {
