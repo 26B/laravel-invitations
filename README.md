@@ -6,7 +6,7 @@ Laravel package for time-limited invitations between any two models (a sender au
 
 ## Requirements
 
-- PHP `^8.4` (8.4, 8.5, 8.6)
+- PHP `^8.4` (tested on 8.4 and 8.5)
 - Laravel `^13.0`
 
 ## Installation

@@ -34,7 +34,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                php: ['8.4', '8.5', '8.6']
+                php: ['8.4', '8.5']
         steps:
             - uses: actions/checkout@v4
 
@@ -54,7 +54,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                php: ['8.4', '8.5', '8.6']
+                php: ['8.4', '8.5']
         steps:
             - uses: actions/checkout@v4
 

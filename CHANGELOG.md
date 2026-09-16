@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Removed PHP 8.6 from the test matrix: PHP 8.6 has not been released yet and `brianium/paratest` (via Pest 5) only supports PHP 8.4 and 8.5.
+
 ## [0.0.1] - 2026-09-16
 
 ### Added
