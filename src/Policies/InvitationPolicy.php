@@ -6,9 +6,40 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Database\Eloquent\Model;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 
+/**
+ * Grants `view` and `delete` to the invitation's sender and recipient, and
+ * `create` to everyone; every other ability is denied.
+ *
+ * Extend the rules without reimplementing them by subclassing this policy and
+ * overriding {@see before()}:
+ *
+ *     class AppInvitationPolicy extends InvitationPolicy
+ *     {
+ *         public function before(Model $user, string $ability, mixed ...$arguments): ?bool
+ *         {
+ *             return $user->hasRole('admin') ? true : null;
+ *         }
+ *     }
+ *
+ * Register the subclass with `Gate::policy(Invitation::class, AppInvitationPolicy::class)`
+ * from a service provider that boots after the package's.
+ */
 class InvitationPolicy
 {
     use HandlesAuthorization;
+
+    /**
+     * Run before every ability check to widen or tighten the rules below.
+     *
+     * Return `true` to allow, `false` to deny, or `null` to fall through to the
+     * ability method. `$arguments` holds the arguments the ability was checked
+     * with: an `Invitation` for `view`/`delete`, the class string for
+     * `create`/`viewAny`.
+     */
+    public function before(Model $user, string $ability, mixed ...$arguments): ?bool
+    {
+        return null;
+    }
 
     /**
      * Determine whether the user can view any models.
@@ -71,7 +102,7 @@ class InvitationPolicy
     /**
      * Whether the user is the model the invitation is addressed to.
      */
-    private function isRecipient(Model $user, Invitation $invitation): bool
+    protected function isRecipient(Model $user, Invitation $invitation): bool
     {
         return $this->matches($user, $invitation->recipient_type, $invitation->recipient_id);
     }
@@ -79,12 +110,12 @@ class InvitationPolicy
     /**
      * Whether the user sent the invitation.
      */
-    private function isSender(Model $user, Invitation $invitation): bool
+    protected function isSender(Model $user, Invitation $invitation): bool
     {
         return $this->matches($user, $invitation->sender_type, $invitation->sender_id);
     }
 
-    private function matches(Model $user, ?string $type, mixed $id): bool
+    protected function matches(Model $user, ?string $type, mixed $id): bool
     {
         return $type === $user->getMorphClass() && (string) $id === (string) $user->getKey();
     }

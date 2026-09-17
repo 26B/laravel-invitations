@@ -188,6 +188,41 @@ All other abilities (`viewAny`, `update`, `restore`, `forceDelete`) are denied.
 
 Both checks are structural morph comparisons (`recipient_type` / `recipient_id` and `sender_type` / `sender_id`); the package does not read `data`.
 
+### Extending the policy
+
+Subclass `InvitationPolicy` and override its `before()` hook to add rules without reimplementing the defaults. `before()` runs for every ability the policy handles and returns `true` to allow, `false` to deny, or `null` to fall through to the built-in checks (`isRecipient()` / `isSender()`, available to subclasses):
+
+```php
+use Illuminate\Database\Eloquent\Model;
+use TwentySixB\LaravelInvitations\Models\Invitation;
+use TwentySixB\LaravelInvitations\Policies\InvitationPolicy;
+
+class AppInvitationPolicy extends InvitationPolicy
+{
+    public function before(Model $user, string $ability, mixed ...$arguments): ?bool
+    {
+        $invitation = $arguments[0] ?? null;
+
+        if ($invitation instanceof Invitation && $user->hasRole('admin') && ! $invitation->isResolved()) {
+            return true;
+        }
+
+        return null;
+    }
+}
+```
+
+Register the subclass from a service provider that boots after the package's (package providers boot before your application's):
+
+```php
+use Illuminate\Support\Facades\Gate;
+use TwentySixB\LaravelInvitations\Models\Invitation;
+
+Gate::policy(Invitation::class, AppInvitationPolicy::class);
+```
+
+`$arguments` holds what the ability was checked with: an `Invitation` for `view`/`delete`, and the class string for `create`/`viewAny`, so treat it as `mixed`.
+
 ## Events
 
 The package dispatches events you can listen to in your application:

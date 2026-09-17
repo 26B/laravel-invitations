@@ -14,6 +14,7 @@ use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyExpiredException;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyRejectedException;
 use TwentySixB\LaravelInvitations\Models\Invitation;
 use TwentySixB\LaravelInvitations\Tests\Account;
+use TwentySixB\LaravelInvitations\Tests\ExtendedInvitationPolicy;
 use TwentySixB\LaravelInvitations\Tests\User;
 
 test('accept sets accepted_at and dispatches the event', function () {
@@ -155,6 +156,23 @@ test('policy matches models with integer keys', function () {
         ->and(Gate::forUser($recipient)->allows('delete', $invitation))->toBeTrue()
         ->and(Gate::forUser($sender)->allows('view', $invitation))->toBeTrue()
         ->and(Gate::forUser($stranger)->allows('view', $invitation))->toBeFalse();
+});
+
+test('a subclass before hook can widen and tighten the policy rules', function () {
+    $recipient = User::factory()->create();
+    $stranger = User::factory()->create();
+
+    $invitation = Invitation::factory()->forRecipient($recipient)->create();
+
+    expect($stranger->can('view', $invitation))->toBeFalse()
+        ->and($recipient->can('delete', $invitation))->toBeTrue();
+
+    Gate::policy(Invitation::class, ExtendedInvitationPolicy::class);
+
+    expect($stranger->can('view', $invitation))->toBeTrue()
+        ->and($recipient->can('view', $invitation))->toBeTrue()
+        ->and($recipient->can('delete', $invitation))->toBeFalse()
+        ->and($stranger->can('create', Invitation::class))->toBeTrue();
 });
 
 test('accept is atomic against a concurrent accept', function () {
