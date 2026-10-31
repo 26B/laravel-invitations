@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 use TwentySixB\LaravelInvitations\Database\Factories\InvitationFactory;
 use TwentySixB\LaravelInvitations\Events\InvitationAccepted;
@@ -19,20 +20,22 @@ use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyExpiredException;
 use TwentySixB\LaravelInvitations\Exceptions\InvitationAlreadyRejectedException;
 
 /**
- * Undocumented class
+ * Invitation between a sender resource and a recipient.
  *
  * @property string $code
  * @property string $recipient_type
  * @property string $recipient_id
- * @property string $sender_type
- * @property string $sender_id
+ * @property string|null $sender_type
+ * @property string|null $sender_id
  * @property array $data
- * @property Carbon $accepted_at
- * @property Carbon $rejected_at
+ * @property Carbon|null $accepted_at
+ * @property Carbon|null $rejected_at
  * @property Carbon $expires_at
- * @property Carbon $expired_dispatched_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property Carbon|null $expired_dispatched_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Model|null $sender
+ * @property-read Model|null $recipient
  */
 class Invitation extends Model
 {
@@ -172,7 +175,7 @@ class Invitation extends Model
     /**
      * Get the model the invitation is addressed to.
      */
-    public function recipient()
+    public function recipient(): MorphTo
     {
         return $this->morphTo();
     }
@@ -180,7 +183,7 @@ class Invitation extends Model
     /**
      * Get the model that sent the invitation.
      */
-    public function sender()
+    public function sender(): MorphTo
     {
         return $this->morphTo();
     }
