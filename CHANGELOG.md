@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-10-31
+
+### Fixed
+
+- `Invitation::sender()` and `Invitation::recipient()` now declare their `MorphTo` return type, so consuming applications get typed relations instead of undefined-property warnings.
+- The model docblock now marks `sender_type`, `sender_id`, `accepted_at`, `rejected_at`, `expired_dispatched_at`, `created_at` and `updated_at` as nullable, matching the schema.
+
 ## [0.2.0] - 2026-09-16
 
 ### Added
